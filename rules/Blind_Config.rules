@@ -1,0 +1,111 @@
+////////////////////////////////////////////////////////////////////////////////////////////
+// Blind Configuration
+////////////////////////////////////////////////////////////////////////////////////////////
+// History: 
+// 2019-03-30	Smart Home Automation
+
+//////////////////////////////////////////////////////////////////
+// Imports
+//////////////////////////////////////////////////////////////////
+import org.openhab.core.library.types
+import org.openhab.model.script.actions
+
+//////////////////////////////////////////////////////////////////
+// global variables
+//////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////
+// Calibrate blinds when signalled 
+
+rule "Blind_Calibration"
+
+when
+	
+	Item  itemBlindCalibration_Event changed to ON
+
+then
+	
+	//////////////////////////////////////////////////////////////////
+	// Event Handler: Open blinds
+	//////////////////////////////////////////////////////////////////
+	
+	logDebug("SmartHome", "Rule: <Blind_Calibration> -> enter")
+
+	// Open blind if automation is initialized and switched on
+	if (itemBlindInitialized.state == ON)
+	{
+		// send open command to rollershutter
+		logDebug("SmartHome", "Blind_Calibration - set calibration status")
+		
+		// Kitchen
+		if (switchBlindCalibration_Room_Kitchen_Window.state == ON)
+		{
+			sendHttpPutRequest("http://localhost:8080/rest/things/zwave:device:11223344:node1/config", "application/json", "{config_29_1:1}")
+		}
+		else
+		{
+			sendHttpPutRequest("http://localhost:8080/rest/things/zwave:device:11223344:node1/config", "application/json", "{config_29_1:0}")
+		}		
+		// Living Room
+		if (switchBlindCalibration_Room_LivingRoom_Door.state == ON)
+		{
+			sendHttpPutRequest("http://localhost:8080/rest/things/zwave:device:11223344:node2/config", "application/json", "{config_29_1:1}")
+		}
+		else
+		{
+			sendHttpPutRequest("http://localhost:8080/rest/things/zwave:device:11223344:node2/config", "application/json", "{config_29_1:0}")
+		}		
+		if (switchBlindCalibration_Room_LivingRoom_Window.state == ON)
+		{
+			sendHttpPutRequest("http://localhost:8080/rest/things/zwave:device:11223344:node3/config", "application/json", "{config_29_1:1}")
+		}
+		else
+		{
+			sendHttpPutRequest("http://localhost:8080/rest/things/zwave:device:11223344:node3/config", "application/json", "{config_29_1:0}")
+		}		
+		// Study Room
+		if (switchBlindCalibration_Room_StudyRoom_Door.state == ON)
+		{
+			sendHttpPutRequest("http://localhost:8080/rest/things/zwave:device:11223344:node4/config", "application/json", "{config_29_1:1}")
+		}
+		else
+		{
+			sendHttpPutRequest("http://localhost:8080/rest/things/zwave:device:11223344:node4/config", "application/json", "{config_29_1:0}")
+		}		
+		if (switchBlindCalibration_Room_StudyRoom_Window.state == ON)
+		{
+			sendHttpPutRequest("http://localhost:8080/rest/things/zwave:device:11223344:node5/config", "application/json", "{config_29_1:1}")
+		}
+		else
+		{
+			sendHttpPutRequest("http://localhost:8080/rest/things/zwave:device:11223344:node5/config", "application/json", "{config_29_1:0}")
+		}		
+		// Bed Room
+		if (switchBlindCalibration_Room_BedRoom_Window.state == ON)
+		{
+			sendHttpPutRequest("http://localhost:8080/rest/things/zwave:device:11223344:node6/config", "application/json", "{config_29_1:1}")
+		}
+		else
+		{
+			sendHttpPutRequest("http://localhost:8080/rest/things/zwave:device:11223344:node6/config", "application/json", "{config_29_1:0}")
+		}		
+		// Bath Room
+		if (switchBlindCalibration_Room_BathRoom_Window.state == ON)
+		{
+			sendHttpPutRequest("http://localhost:8080/rest/things/zwave:device:11223344:node7/config", "application/json", "{config_29_1:1}")
+		}
+		else
+		{
+			sendHttpPutRequest("http://localhost:8080/rest/things/zwave:device:11223344:node7/config", "application/json", "{config_29_1:0}")
+		}		
+	}
+
+	createTimer(now.plusSeconds(1)) [|
+		// reset trigger signal
+		itemBlindCalibration_Event.postUpdate(OFF) 
+	]
+	
+
+	logDebug("SmartHome", "Rule: <Blind_Calibration> -> exit")
+
+end

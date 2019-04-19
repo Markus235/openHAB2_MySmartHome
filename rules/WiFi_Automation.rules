@@ -1,0 +1,433 @@
+////////////////////////////////////////////////////////////////////////////////////////////
+// WiFi Automation - Timer Setting via UI
+////////////////////////////////////////////////////////////////////////////////////////////
+// History: 
+// 2019-03-30	Smart Home Automation
+ 
+//////////////////////////////////////////////////////////////////
+// Imports
+//////////////////////////////////////////////////////////////////
+import org.openhab.core.library.types.*
+import org.openhab.core.persistence.*
+import org.openhab.model.script.actions.*
+import org.java.math.* 
+import org.joda.time.*
+
+// formatting time 
+import java.util.Date
+import java.text.SimpleDateFormat
+
+import java.util.concurrent.locks.ReentrantLock
+
+//////////////////////////////////////////////////////////////////
+// global variables
+//////////////////////////////////////////////////////////////////
+
+// UI messages
+val String stringStatus_Automatic_On =		"switched on automatically"
+val String stringStatus_Automatic_Off = 	"switched off automatically"
+val String stringStatus_Init = 				"initialized automatically"
+val String stringStatus_NotInit = 			"not initialized"
+
+// Timer
+var Timer	timerWifiTimerOn = null
+var Timer	timerWifiTimerOff = null
+
+// Locks
+var java.util.concurrent.locks.ReentrantLock 	WifiTimerOnLock = new java.util.concurrent.locks.ReentrantLock()
+var java.util.concurrent.locks.ReentrantLock 	WifiTimerOffLock = new java.util.concurrent.locks.ReentrantLock()
+var java.util.concurrent.locks.ReentrantLock 	WifiDeviceOnLock = new java.util.concurrent.locks.ReentrantLock()
+var java.util.concurrent.locks.ReentrantLock 	WifiDeviceOffLock = new java.util.concurrent.locks.ReentrantLock()
+
+// Time values
+var int intCurrentTime = 0			// Current time
+var int intWifiSwitchOnTime = 0		// Time to switch on
+var int intWifiSwitchOffTime = 0	// Time to switch off
+var int intWifiTimerSwitchOn = 0	// Set time: hour
+var int intWifiTimerSwitchOff = 0	// Set time: hour
+
+// Messages
+var String stringTimestamp_on = stringStatus_NotInit
+var String stringTimestamp_off = stringStatus_NotInit
+var String stringStatusMessage = stringStatus_NotInit
+
+// Debug
+var String msg = ""
+
+/////////////////////////////////////////////////////////////////
+// Initialize WiFi automation after reset
+//////////////////////////////////////////////////////////////////
+
+rule "WiFi_Automation_Init"
+
+when
+
+	System started
+	
+then
+	
+	//////////////////////////////////////////////////////////////////
+	// Event Handler: WiFi automation initialization 
+	//////////////////////////////////////////////////////////////////
+	
+	logDebug("SmartHome", "Rule: <WiFi_Automation_Init> -> enter")
+	
+	// Wait 3 minutes before initialize automation control to ensure that system is up and running
+	logDebug("SmartHome", "WiFi_Automation_Init - Wait for system is ready") 
+
+	var Timer waitForSystem = createTimer(now.plusMinutes(1)) [|
+		// start basic initialization
+		logDebug("SmartHome", "WiFi_Automation_Init - start initialization")
+	
+		// Switch WiFi automation and WiFi on
+		sendCommand(switchWiFiTimerAutomationOn, OFF)
+		sendCommand(switchWiFiTimerAutomationOff, ON)
+		sendCommand(switchWiFiDeviceAutomationOn, OFF)
+		sendCommand(switchWiFiDeviceAutomationOff, OFF)
+		
+		// set default time: 
+		// switch on at 6:30 am 
+		// switch off at 11:30 pm 
+		postUpdate(numberWiFiTimerOnHour, 		6)
+		postUpdate(numberWiFiTimerOnMinute, 	30)
+		postUpdate(numberWiFiTimerOffHour, 		22)
+		postUpdate(numberWiFiTimerOffMinute, 	30)
+		
+		// update last WiFi action information
+		stringTimestamp_on = String::format("%1$tY-%1$tm-%1$td %1$tH:%1$tM:%1$tS", new Date())
+		stringTimestamp_off = stringTimestamp_on
+		stringStatusMessage =  stringStatus_Init
+
+		sendCommand(stringWiFiStatus, stringStatusMessage)
+
+		logDebug("SmartHome", "WiFi_Automation_Init - initialized")
+	]
+	
+	logDebug("SmartHome", "Rule: <WiFi_Automation_Init> -> exit")
+
+end
+
+//////////////////////////////////////////////////////////////////
+// Switch off WiFi
+//////////////////////////////////////////////////////////////////
+
+rule "WiFi_Automation_Off_TimerTrigger"
+
+when
+
+	Item numberWiFiTimerOffHour received update 
+	or
+	Item numberWiFiTimerOffMinute received update
+	or
+	Time cron "0 0 1 * * ?"
+
+then
+	
+	//////////////////////////////////////////////////////////////////
+	// Event Handler: Switch off WiFi 
+	//////////////////////////////////////////////////////////////////
+	// If UI to change timer setting is clicked several times we face some raise condition.
+	// Due to that all events are processed one after the other. 
+	
+	logDebug("SmartHome", "Rule: <WiFi_Automation_Off_TimerTrigger> -> enter")
+	
+	try
+	{
+		// prevent re-entrance
+		logDebug("SmartHome", "WiFi_Automation_Off_TimerTrigger - Lock")
+		WifiTimerOffLock.lock()
+		
+		logDebug("SmartHome", "WiFi_Automation_Off_TimerTrigger - Calculate Timer values")
+
+		// Get and update timer setting from UI
+		var int intHour = (numberWiFiTimerOffHour.state as DecimalType).intValue
+		var int intMinute = (numberWiFiTimerOffMinute.state as DecimalType).intValue
+		
+		// Update WiFi switch off timestamp 
+		stringTimestamp_off = ""
+		if (intHour < 10)
+		{
+			stringTimestamp_off = "0"
+		}
+		stringTimestamp_off = stringTimestamp_off + intHour + ":"
+		
+		if (intMinute < 10)
+		{
+			stringTimestamp_off = stringTimestamp_off + "0"
+		}
+		stringTimestamp_off = stringTimestamp_off + intMinute 
+		stringWifiTimerOffMessage.postUpdate(stringTimestamp_off)
+		
+		// Calculate switch on time
+		intWifiSwitchOffTime = intHour * 60 + intMinute
+		intWifiSwitchOffTime = intWifiSwitchOffTime.intValue
+					
+		// Calculate current time in minutes
+		intCurrentTime = now.getMinuteOfDay
+		intCurrentTime = intCurrentTime.intValue
+		
+		// Calculate the difference between the set time to switch off WiFi and the current time in minutes
+		intWifiTimerSwitchOff = (intWifiSwitchOffTime - intCurrentTime)
+		intWifiTimerSwitchOff = intWifiTimerSwitchOff.intValue
+
+		// If time to switch off is already gone, add 24 hours in minutes
+		if (intCurrentTime > intWifiSwitchOffTime)
+		{
+			logDebug("SmartHome", "WiFi_Automation_Off_TimerTrigger - Time to switch off is already gone, add 24 hours in minutes")
+			intWifiTimerSwitchOff = intWifiTimerSwitchOff + 1440
+		}
+			
+		// If timer is already set, cancel it
+		if (timerWifiTimerOff != null)
+		{ 
+			logDebug("SmartHome", "WiFi_Automation_Off_TimerTrigger - Timer is already set, cancel it")
+			timerWifiTimerOff.cancel
+			timerWifiTimerOff = null
+		}
+		
+		// create timer for switching off WiFi
+		logDebug("SmartHome", "WiFi_Automation_Off_TimerTrigger - Create and set timer to switch off WiFi")
+		timerWifiTimerOff = createTimer(now.plusMinutes(intWifiTimerSwitchOff)) [|
+			// Switch off WiFi if at least one automation is on
+			if((switchWiFiTimerAutomationOff.state == ON) || (switchWiFiDeviceAutomationOff.state == ON))
+			{
+				// send switch off command to wall plug
+				logDebug("SmartHome", "WiFi_Automation_Off_TimerTrigger - WiFi switch off")
+				sendCommand(actuatorWallPlug_WiFi_Switch, OFF)				
+
+				// update last WiFi action information
+				stringTimestamp_off = String::format("%1$tY-%1$tm-%1$td %1$tH:%1$tM:%1$tS", new Date())
+				stringStatusMessage = stringStatus_Automatic_Off
+		
+				switchWifiAutomationTrigger.postUpdate(ON)
+				stringWifiTimerOffMessage.postUpdate(stringTimestamp_off)
+				stringWiFiStatus.postUpdate(stringStatusMessage)
+		
+				logDebug("SmartHome", "WiFi_Automation_Off_TimerTrigger - Wifi switched off automatically")
+			}
+		]
+	}
+	finally
+	{
+		// release the lock, so next timer settings change can be processed
+		logDebug("SmartHome", "WiFi_Automation_Off_TimerTrigger - Unlock")
+		WifiTimerOffLock.unlock()
+	}
+	
+	logDebug("SmartHome", "Rule: <WiFi_Automation_Off_TimerTrigger> -> exit")
+	
+end
+
+
+//////////////////////////////////////////////////////////////////
+// Switch on WiFi
+//////////////////////////////////////////////////////////////////
+ 
+rule "WiFi_Automation_On_TimerTrigger"
+
+when
+
+	Item numberWiFiTimerOnHour received update 
+	or
+	Item numberWiFiTimerOnMinute received update
+	or
+	Time cron "0 5 1 * * ?"
+
+then
+	
+	//////////////////////////////////////////////////////////////////
+	// Event Handler: Switch on WiFi 
+	//////////////////////////////////////////////////////////////////
+	// If UI to change timer setting is clicked several times we face some raise condition.
+	// Due to that all events are processed one after the other. 
+	
+	try
+	{
+		logDebug("SmartHome", "Rule: <WiFi_Automation_On_TimerTrigger> -> enter")
+		WifiTimerOnLock.lock()
+
+		logDebug("SmartHome", "WiFi_Automation_On_TimerTrigger - Calculate Timer values")
+
+		// Get and update timer setting from UI
+		var int intHour = (numberWiFiTimerOnHour.state as DecimalType).intValue
+		var int intMinute = (numberWiFiTimerOnMinute.state as DecimalType).intValue
+		
+		// Update WiFi switch on timestamp 
+		stringTimestamp_on = ""
+	
+		if (intHour < 10)
+		{
+			stringTimestamp_on = "0"
+		}
+		stringTimestamp_on = stringTimestamp_on + intHour + ":"
+		
+		if (intMinute < 10)
+		{
+			stringTimestamp_on = stringTimestamp_on + "0"
+		}
+		stringTimestamp_on = stringTimestamp_on + intMinute 
+		stringWifiTimerOnMessage.postUpdate(stringTimestamp_on)
+		
+		// Calculate switch on time
+		intWifiSwitchOnTime = intHour * 60 + intMinute
+		intWifiSwitchOnTime = intWifiSwitchOnTime.intValue
+					
+		// Calculate current time in minutes
+		intCurrentTime = now.getMinuteOfDay
+		intCurrentTime = intCurrentTime.intValue
+		
+		// Timer value: Difference between the time to switch on WiFi and the current time in minutes
+		intWifiTimerSwitchOn = (intWifiSwitchOnTime - intCurrentTime)
+		intWifiTimerSwitchOn = intWifiTimerSwitchOn.intValue
+		
+		// If time to switch on WiFi is already gone, add 24 hours in minutes
+		if (intCurrentTime > intWifiSwitchOnTime)
+		{
+			logDebug("SmartHome", "WiFi_Automation_On_TimerTrigger - Time to switch on WiFi is already gone, add 24 hours in minutes")
+			intWifiTimerSwitchOn = intWifiTimerSwitchOn + 1440
+		}
+			
+		// If timer is already set, cancel it
+		if (timerWifiTimerOn != null)
+		{ 
+			logDebug("SmartHome", "WiFi_Automation_On_TimerTrigger - timer is already set, cancel it")
+			timerWifiTimerOn.cancel
+			timerWifiTimerOn = null
+		}
+		
+		// create timer for switching on WiFi
+		logDebug("SmartHome", "WiFi_Automation_On_TimerTrigger - Set Timer:  WiFi switch on")
+		timerWifiTimerOn = createTimer(now.plusMinutes(intWifiTimerSwitchOn)) [|
+			// Switch on WiFi if automation is on
+			if((switchWiFiTimerAutomationOn.state == ON))
+			{
+				// send switch off command to wall plug
+				logDebug("SmartHome", "WiFi_Automation_On_TimerTrigger - WiFi switch on")
+				sendCommand(actuatorWallPlug_WiFi_Switch, ON)				
+
+				// update last WiFi action information
+				stringTimestamp_on = String::format("%1$tY-%1$tm-%1$td %1$tH:%1$tM:%1$tS", new Date())
+				stringStatusMessage = stringStatus_Automatic_On
+		
+				sendCommand(switchWifiAutomationTrigger, OFF)
+				sendCommand(stringWifiTimerOnMessage, stringTimestamp_on)
+				sendCommand(stringWiFiStatus, stringStatusMessage)
+		
+				logDebug("SmartHome", "WiFi_Automation_On_TimerTrigger - Wifi switched on automatically")
+			}
+		]
+	}
+	finally
+	{
+		// release the lock, so next timer settings change can be processed
+		logDebug("SmartHome", "WiFi_Automation_On_TimerTrigger - Unlock")
+		WifiTimerOnLock.unlock()
+	}
+	
+	logDebug("SmartHome", "Rule: <WiFi_Automation_On_TimerTrigger> -> exit")
+	
+end
+
+//////////////////////////////////////////////////////////////////
+// Switch on WiFi by Device
+//////////////////////////////////////////////////////////////////
+
+rule "WiFi_Automation_On_DeviceTrigger"
+
+when
+
+	Item switchNotebook_Online changed to ON 
+
+then
+	
+	//////////////////////////////////////////////////////////////////
+	// Event Handler: Switch on WiFi by device detection
+	//////////////////////////////////////////////////////////////////
+	// If change is detected several times we face some raise condition.
+	// Due to that all events are processed one after the other. 
+	
+	try
+	{
+		logDebug("SmartHome", "Rule: <WiFi_Automation_On_DeviceTrigger> -> enter")
+		WifiDeviceOnLock.lock()
+
+		// Switch on WiFi if device automation is on
+		if((switchWiFiDeviceAutomationOn.state == ON))
+		{
+			// send switch on command to wall plug
+			logDebug("SmartHome", "WiFi_Automation_On_DeviceTrigger - WiFi switch on")
+			sendCommand(actuatorWallPlug_WiFi_Switch, ON)				
+
+			// update last WiFi action information
+			stringTimestamp_on = String::format("%1$tY-%1$tm-%1$td %1$tH:%1$tM:%1$tS", new Date())
+			stringStatusMessage = stringStatus_Automatic_On
+		
+			sendCommand(switchWifiAutomationTrigger, OFF)
+			sendCommand(stringWifiTimerOnMessage, stringTimestamp_on)
+			sendCommand(stringWiFiStatus, stringStatusMessage)
+		
+			logDebug("SmartHome", "WiFi_Automation_On_DeviceTrigger - Wifi switched on automatically")
+		}
+	}
+	finally
+	{
+		// release the lock, so next timer settings change can be processed
+		logDebug("SmartHome", "WiFi_Automation_On_DeviceTrigger - Unlock")
+		WifiDeviceOnLock.unlock()
+	}
+	
+	logDebug("SmartHome", "Rule: <WiFi_Automation_On_DeviceTrigger> -> exit")
+	
+end
+
+//////////////////////////////////////////////////////////////////
+// Switch off WiFi by Device
+//////////////////////////////////////////////////////////////////
+ 
+rule "WiFi_Automation_Off_DeviceTrigger"
+
+when
+
+	Item switchNotebook_Online changed to OFF 
+
+then
+	
+	//////////////////////////////////////////////////////////////////
+	// Event Handler: Switch off WiFi by device detection
+	//////////////////////////////////////////////////////////////////
+	// If change is detected several times we face some raise condition.
+	// Due to that all events are processed one after the other. 
+	
+	try
+	{
+		logDebug("SmartHome", "Rule: <WiFi_Automation_Off_DeviceTrigger> -> enter")
+		WifiDeviceOffLock.lock()
+
+		// Switch off WiFi if device automation is on
+		if((switchWiFiDeviceAutomationOff.state == ON))
+		{
+			// send switch on command to wall plug
+			logDebug("SmartHome", "WiFi_Automation_Off_DeviceTrigger - WiFi switch off")
+			sendCommand(actuatorWallPlug_WiFi_Switch, OFF)				
+
+			// update last WiFi action information
+			stringTimestamp_off = String::format("%1$tY-%1$tm-%1$td %1$tH:%1$tM:%1$tS", new Date())
+			stringStatusMessage = stringStatus_Automatic_Off
+			
+			sendCommand(switchWifiAutomationTrigger, ON)
+			sendCommand(stringWifiTimerOnMessage, stringTimestamp_off)
+			sendCommand(stringWiFiStatus, stringStatusMessage)
+			logDebug("SmartHome", "WiFi_Automation_Off_DeviceTrigger - Wifi switched off automatically")
+		}
+	}
+	finally
+	{
+		// release the lock, so next timer settings change can be processed
+		logDebug("SmartHome", "WiFi_Automation_Off_DeviceTrigger - Unlock")
+		WifiDeviceOffLock.unlock()
+	}
+	
+	logDebug("SmartHome", "Rule: <WiFi_Automation_Off_DeviceTrigger> -> exit")
+	
+end
+

@@ -1,0 +1,660 @@
+////////////////////////////////////////////////////////////////////////////////////////////
+// Blind Automation
+////////////////////////////////////////////////////////////////////////////////////////////
+// History: 
+/ 2019-03-30	Smart Home Automation
+
+//////////////////////////////////////////////////////////////////
+// Imports
+//////////////////////////////////////////////////////////////////
+import org.openhab.core.library.types
+import org.openhab.core.persistence
+import org.openhab.model.script.actions
+import org.java.math 
+import org.joda.time
+
+// formatting time 
+import java.util.Date
+
+//////////////////////////////////////////////////////////////////
+// global variables
+//////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////
+// UI messages
+val String stringStatus_AutomaticOpen_ByCron =				"opened automatically"
+val String stringStatus_AutomaticOpen_ByTimer =				"opened automatically (Timer)"
+val String stringStatus_AutomaticOpen_ByAstro =				"opened automatically (Civil Dawn - Start)"
+val String stringStatus_ManualOpen =			 			"opened manually"
+val String stringStatus_AutomaticClose_ByTimer = 			"closed automatically (Timer)"
+val String stringStatus_AutomaticClose_ByAstro = 			"closed automatically (Civil Dusk - End)"
+val String stringStatus_ManualClose =			 			"closed manually"
+val String stringStatus_Init = 								"automatically initialized"
+val String stringStatus_NotInit = 							"not initialized"
+
+//////////////////////////////////////////////////////////////////
+// Timer
+var Timer timerBlindOpen = null
+var Timer timerBlindClose = null
+
+// Time values
+var int intCurrentTime = 0			// Current time
+var int intBlindOpenTime = 0		// Time in minutes to open the blinds
+var int intBlindTimerOpen = 0		// Timer ticks in minutes to open the blinds
+var int intBlindCloseTime = 0		// Time in minutes to close the blinds
+var int intBlindTimerClose = 0		// Timer ticks in minutes to close the blinds
+
+// Blind status: -1: unknown, 0:closed, 1:open
+var int intBlindStatus = -1
+
+// Flag for manual trigger: 1: open/close manual triggered
+var int intManualTriggerStatus = 0
+
+// Locks
+var java.util.concurrent.locks.ReentrantLock 	BlindTimerOpenLock = new java.util.concurrent.locks.ReentrantLock()
+var java.util.concurrent.locks.ReentrantLock 	BlindTimerCloseLock = new java.util.concurrent.locks.ReentrantLock()
+
+// Time values
+var Number  numberOpenHour = null
+var Number  numberOpenMinute = null
+var Number  numberCloseHour = null
+var Number  numberCloseMinute = null
+
+// Blind Calibration Value
+var Number  numberBlindCalibration = null
+
+// Messages
+var String stringTimestamp = stringStatus_NotInit
+var String stringTimestamp_open = stringStatus_NotInit
+var String stringTimestamp_close = stringStatus_NotInit
+var String stringStatusMessage = stringStatus_NotInit
+
+// Debug
+var String msg
+
+//////////////////////////////////////////////////////////////////
+// Close blinds 
+//////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////
+// Close blinds by manual trigger
+
+rule "Blind_Automation_ManualTrigger_Close"
+
+when
+
+	Item switchBlindManualTriggerClose changed to ON
+
+then
+
+	//////////////////////////////////////////////////////////////////
+	// Event Handler: Blind close (manual trigger)
+	//////////////////////////////////////////////////////////////////
+
+	logDebug("SmartHome", "Rule: <Blind_Automation_ManualTrigger_Close> -> enter")
+	
+	// Close blind if automation is initialized
+	if (itemBlindInitialized.state == ON)
+	{
+		// set to OFF before signalling
+		itemBlindClose_Event.postUpdate(OFF) 
+		itemBlindClose_Event.postUpdate(ON)
+		
+		// set manual trigger
+		intManualTriggerStatus = 1
+
+		// set status message - UI control is updated in open routine
+		stringStatusMessage = stringStatus_ManualClose
+
+		createTimer(now.plusSeconds(1)) [|
+			// reset trigger signal
+			switchBlindManualTriggerClose.postUpdate(OFF) 
+		]
+	}
+
+	logDebug("SmartHome", "Rule: <Blind_Automation_ManualTrigger_Close> -> exit")
+
+end
+
+//////////////////////////////////////////////////////////////////
+// Close blinds by astro binding timer trigger
+
+rule "Blind_Automation_AstroBindingTrigger_Close"
+
+when
+
+	Channel 'astro:sun:51881f45:civilDusk#event' triggered END 
+
+then
+
+	//////////////////////////////////////////////////////////////////
+	// Event Handler: Blind close (astro binding trigger)
+	//////////////////////////////////////////////////////////////////
+
+	logDebug("SmartHome", "Rule: <Blind_Automation_AstroBindingTrigger_Close> -> enter")
+	msg = "Blind_Automation_AstroBindingTrigger_Close - switchBlindAutomationTimerCloseOnOff: " + switchBlindAutomationTimerCloseOnOff.state
+	logDebug("SmartHome", msg)
+
+	// Close blind if automation is initialized and timer automation is off
+	if ((itemBlindInitialized.state == ON) && (switchBlindAutomationTimerCloseOnOff.state == OFF))
+	{
+		// set to OFF before signalling
+		itemBlindClose_Event.postUpdate(OFF) 
+		itemBlindClose_Event.postUpdate(ON)
+
+		// set status message - UI control is updated in open routine
+		stringStatusMessage = stringStatus_AutomaticClose_ByAstro
+	}
+
+	logDebug("SmartHome", "Rule: <Blind_Automation_AstroBindingTrigger_Close> -> exit")
+
+end
+
+//////////////////////////////////////////////////////////////////
+// Close blinds by timer control
+
+rule "Blind_Automation_Close_TimerTrigger"
+
+when
+
+	Item numberBlindTimerWD_CloseHour received update 
+	or
+	Item numberBlindTimerWD_CloseMinute received update
+	or
+	Item numberBlindTimerWE_CloseHour received update 
+	or
+	Item numberBlindTimerWE_CloseMinute received update
+	or
+	Time cron "0 0 4 * * ?"
+
+then
+	
+	//////////////////////////////////////////////////////////////////
+	// Event Handler: Blind Close (Timer)
+	//////////////////////////////////////////////////////////////////
+	// If UI to change timer setting is clicked several times we face some raise condition.
+	// Due to that all events are processed one after the other. 
+	
+	logDebug("SmartHome", "Rule: <Blind_Automation_Close_TimerTrigger> -> enter")
+
+	try
+	{
+		// prevent re-entrance
+		logDebug("SmartHome", "Blind_Automation_Close_TimerTrigger - Lock")
+		BlindTimerCloseLock.lock()
+		
+		// Close blind if automation is initialized
+		if (itemBlindInitialized.state == ON)
+		{
+			logDebug("SmartHome", "Blind_Automation_Close_TimerTrigger - Calculate Timer values")
+
+			if (now.getDayOfWeek < 6)
+			{	
+				numberCloseHour	= numberBlindTimerWD_CloseHour.state as DecimalType
+				numberCloseMinute = numberBlindTimerWD_CloseMinute.state as DecimalType
+			}
+			else
+			{
+				numberCloseHour = numberBlindTimerWE_CloseHour.state as DecimalType
+				numberCloseMinute = numberBlindTimerWE_CloseMinute.state as DecimalType
+			}
+
+			// Get and update timer setting from UI
+			var int intCloseHour = numberCloseHour.intValue
+			var int intCloseMinute = numberCloseMinute.intValue
+
+			// Update blind close timestamp 
+			stringTimestamp_close = ""
+			if (intCloseHour < 10)
+			{
+				stringTimestamp_close = "0"
+			}
+			stringTimestamp_close = stringTimestamp_close + intCloseHour + ":"
+			
+			if (intCloseMinute < 10)
+			{
+				stringTimestamp_close = stringTimestamp_close + "0"
+			}
+			stringTimestamp_close = stringTimestamp_close + intCloseMinute 
+			stringBlindTimerCloseMessage.postUpdate(stringTimestamp_close)
+
+			// Calculate blind open time
+			intBlindCloseTime = intCloseHour * 60 + intCloseMinute
+			intBlindCloseTime = intBlindCloseTime.intValue
+						
+			// Calculate current time in minutes
+			intCurrentTime = now.getMinuteOfDay
+			intCurrentTime = intCurrentTime.intValue
+			
+			// Timer value: Difference between the time to close blind and the current time in minutes
+			intBlindTimerClose = (intBlindCloseTime - intCurrentTime)
+			intBlindTimerClose = intBlindTimerClose.intValue
+
+			// If time to close blind is already gone, add 24 hours in minutes to timer value
+			if (intCurrentTime > intBlindCloseTime)
+			{
+				logDebug("SmartHome", "Blind_Automation_Close_TimerTrigger - Time to close blind is already gone, add 24 hours in minutes")
+				intBlindTimerClose = intBlindTimerClose + 1440
+			}
+				
+			// If timer is already set, cancel it
+			if (timerBlindClose !== null)
+			{ 
+				logDebug("SmartHome", "Blind_Automation_Close_TimerTrigger - Timer is already set, cancel it")
+				timerBlindClose.cancel
+				timerBlindClose = null
+			}
+			
+			// create timer for close blind
+			logDebug("SmartHome", "Blind_Automation_Close_TimerTrigger - Create and set timer to close blind")
+			msg = "Blind_Automation_Close_TimerTrigger - intBlindTimerClose: " + intBlindTimerClose
+			logDebug("SmartHome", msg)
+			msg = "Blind_Automation_Close_TimerTrigger - switchBlindAutomationTimerCloseOnOff: " + switchBlindAutomationTimerCloseOnOff.state
+			logDebug("SmartHome", msg)
+
+			timerBlindClose = createTimer(now.plusMinutes(intBlindTimerClose)) [|
+				// Close blind if timer automation is on
+				if((switchBlindAutomationTimerCloseOnOff.state == ON))
+				{
+					logDebug("SmartHome", "Blind_Automation_Close_TimerTrigger - Signal event to close blind")
+					// signal event to open blind
+					itemBlindClose_Event.postUpdate(OFF) 
+					itemBlindClose_Event.postUpdate(ON)
+
+					// set status message - UI control is updated in close routine
+					stringStatusMessage = stringStatus_AutomaticClose_ByTimer
+				}
+				timerBlindClose = null
+			]
+		}
+	}
+	finally
+	{
+			// release the lock, so next timer settings change can be processed
+			logDebug("SmartHome", "Blind_Automation_Close_TimerTrigger - Unlock")
+			BlindTimerCloseLock.unlock()
+	}
+
+	logDebug("SmartHome", "Rule: <Blind_Automation_Close_TimerTrigger> -> exit")
+	
+end
+
+//////////////////////////////////////////////////////////////////
+// Close blinds when signalled 
+
+rule "Blind_Automation_Close"
+
+when
+
+	Item  itemBlindClose_Event changed to ON
+	
+then
+	
+	//////////////////////////////////////////////////////////////////
+	// Event Handler: Close blinds 
+	//////////////////////////////////////////////////////////////////
+	
+	logDebug("SmartHome", "Rule: <Blind_Automation_Close> -> enter")
+
+	// reset trigger signal
+	itemBlindClose_Event.postUpdate(OFF) 
+	
+	// Close blind if automation is initialized and switched on
+	if ((itemBlindInitialized.state == ON) && ((switchBlindAutomationOnOff.state == ON) || (intManualTriggerStatus == 1)))
+	{
+		// send close command to rollershutter if not already closed 
+		logDebug("SmartHome", "Blind_Automation_Close - Close blinds")
+		
+		// reset manual trigger
+		intManualTriggerStatus = 0
+
+		// Kitchen
+		numberBlindCalibration = numberBlind_Kitchen_Window_Close.state as DecimalType
+		if ((actuatorBlind_Room_Kitchen_Window_BlindsControl.state < numberBlindCalibration) && (switchBlindAutomationClose_Room_Kitchen_Window.state == ON))
+		{
+			sendCommand(actuatorBlind_Room_Kitchen_Window_BlindsControl, numberBlindCalibration)
+		}
+		// Living Room
+		numberBlindCalibration = numberBlind_LivingRoom_Door_Close.state as DecimalType
+		if ((actuatorBlind_Room_LivingRoom_Door_BlindsControl.state < numberBlindCalibration) && (switchBlindAutomationClose_Room_LivingRoom_Door.state == ON))
+		{
+			sendCommand(actuatorBlind_Room_LivingRoom_Door_BlindsControl, numberBlindCalibration)
+		}
+		numberBlindCalibration = numberBlind_LivingRoom_Window_Close.state as DecimalType
+		if ((actuatorBlind_Room_LivingRoom_Window_BlindsControl.state < numberBlindCalibration) && (switchBlindAutomationClose_Room_LivingRoom_Window.state == ON))
+		{
+			sendCommand(actuatorBlind_Room_LivingRoom_Window_BlindsControl, numberBlindCalibration)
+		}
+		// Study Room
+		numberBlindCalibration = numberBlind_StudyRoom_Door_Close.state as DecimalType
+		if ((actuatorBlind_Room_StudyRoom_Door_BlindsControl.state < numberBlindCalibration) && (switchBlindAutomationClose_Room_StudyRoom_Door.state == ON))
+		{
+			sendCommand(actuatorBlind_Room_StudyRoom_Door_BlindsControl, numberBlindCalibration)
+		}
+		numberBlindCalibration = numberBlind_StudyRoom_Window_Close.state as DecimalType
+		if ((actuatorBlind_Room_StudyRoom_Window_BlindsControl.state < numberBlindCalibration) && (switchBlindAutomationClose_Room_StudyRoom_Window.state == ON))
+		{
+			sendCommand(actuatorBlind_Room_StudyRoom_Window_BlindsControl, numberBlindCalibration)
+		}
+		// Bed Room
+		numberBlindCalibration = numberBlind_BedRoom_Window_Close.state as DecimalType
+		if ((actuatorBlind_Room_BedRoom_Window_BlindsControl.state < numberBlindCalibration) && (switchBlindAutomationClose_Room_BedRoom_Window.state == ON))
+		{
+			sendCommand(actuatorBlind_Room_BedRoom_Window_BlindsControl, numberBlindCalibration)
+		}
+		// Bath Room
+		numberBlindCalibration = numberBlind_BathRoom_Window_Close.state as DecimalType
+		if ((actuatorBlind_Room_BathRoom_Window_BlindsControl.state < numberBlindCalibration) && (switchBlindAutomationClose_Room_BathRoom_Window.state == ON))
+		{
+			sendCommand(actuatorBlind_Room_BathRoom_Window_BlindsControl, numberBlindCalibration)
+		}
+		
+		// update last rollershutter action information
+		
+		// Update blind open timestamp 
+		stringTimestamp = String::format("%1$tY-%1$tm-%1$td %1$tH:%1$tM:%1$tS", new Date())
+		stringBlindExecutionTime.postUpdate(stringTimestamp)
+		
+		// Update blind open status message 
+		stringBlindStatus.postUpdate(stringStatusMessage)
+		intBlindStatus = 0
+	}
+	
+	logDebug("SmartHome", "Rule: <Blind_Automation_Close> -> exit")
+
+end
+
+
+//////////////////////////////////////////////////////////////////
+// Open blinds 
+//////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////
+// Open blinds by manual trigger
+
+rule "Blind_Automation_ManualTrigger_Open"
+
+when
+
+	Item switchBlindManualTriggerOpen changed to ON
+
+then
+
+	//////////////////////////////////////////////////////////////////
+	// Event Handler: Blind open (manual trigger)
+	//////////////////////////////////////////////////////////////////
+
+	logDebug("SmartHome", "Rule: <Blind_Automation_ManualTrigger_Open> -> enter")
+
+	// Open blind if automation is initialized
+	if (itemBlindInitialized.state == ON)
+	{
+		// set to OFF before signalling
+		itemBlindOpen_Event.postUpdate(OFF) 
+		itemBlindOpen_Event.postUpdate(ON)
+		
+		 // set manual trigger
+		 intManualTriggerStatus = 1
+
+		// set status message - UI control is updated in open routine
+		stringStatusMessage = stringStatus_ManualOpen
+	
+		createTimer(now.plusSeconds(1)) [|
+			// reset trigger signal
+			switchBlindManualTriggerOpen.postUpdate(OFF) 
+		]
+	}
+	
+	logDebug("SmartHome", "Rule: <Blind_Automation_ManualTrigger_Open> -> exit")
+
+end
+
+//////////////////////////////////////////////////////////////////
+// Open blinds by astro binding timer trigger
+
+rule "Blind_Automation_AstroBindingTrigger_Open"
+
+when
+
+	Channel 'astro:sun:51881f45:civilDawn#event' triggered START 
+
+then
+
+	//////////////////////////////////////////////////////////////////
+	// Event Handler: Blind open (astro binding trigger)
+	//////////////////////////////////////////////////////////////////
+
+	logDebug("SmartHome", "Rule: <Blind_Automation_AstroBindingTrigger_Open> -> enter")
+	msg = "Blind_Automation_AstroBindingTrigger_Open - switchBlindAutomationTimerOpenOnOff: " + switchBlindAutomationTimerOpenOnOff.state
+	logDebug("SmartHome", msg)
+	
+	// Open blind if automation is initialized and timer automation is off
+	if ((itemBlindInitialized.state == ON) && (switchBlindAutomationTimerOpenOnOff.state == OFF))
+	{
+		// set to OFF before signalling
+		itemBlindOpen_Event.postUpdate(OFF) 
+		itemBlindOpen_Event.postUpdate(ON)
+
+		// set status message - UI control is updated in open routine
+		stringStatusMessage = stringStatus_AutomaticOpen_ByAstro
+	}
+
+	logDebug("SmartHome", "Rule: <Blind_Automation_AstroBindingTrigger_Open> -> exit")
+
+end
+
+//////////////////////////////////////////////////////////////////
+// Open blinds by timer control
+
+rule "Blind_Automation_Open_TimerTrigger"
+
+when
+
+	Item numberBlindTimerWD_OpenHour received update 
+	or
+	Item numberBlindTimerWD_OpenMinute received update
+	or
+	Item numberBlindTimerWE_OpenHour received update 
+	or
+	Item numberBlindTimerWE_OpenMinute received update
+	or
+	Time cron "0 5 4 * * ?"
+
+then
+	
+	//////////////////////////////////////////////////////////////////
+	// Event Handler: Blind Open (Timer)
+	//////////////////////////////////////////////////////////////////
+	// If UI to change timer setting is clicked several times we face some raise condition.
+	// Due to that all events are processed one after the other. 
+	
+	logDebug("SmartHome", "Rule: <Blind_Automation_Open_TimerTrigger> -> enter")
+
+	try
+	{
+		// prevent re-entrance
+		logDebug("SmartHome", "Blind_Automation_Open_TimerTrigger - Lock")
+		BlindTimerOpenLock.lock()
+
+		// Open blind if automation is initialized
+		if (itemBlindInitialized.state == ON)
+		{
+			logDebug("SmartHome", "Blind_Automation_Open_TimerTrigger - Calculate Timer values")
+
+			if (now.getDayOfWeek < 6)
+			{	
+				logDebug("SmartHome", "Blind_Automation_Open_TimerTrigger - Timer Working Days")
+				numberOpenHour	= numberBlindTimerWD_OpenHour.state as DecimalType
+				numberOpenMinute = numberBlindTimerWD_OpenMinute.state as DecimalType
+			}
+			else
+			{
+				logDebug("SmartHome", "Blind_Automation_Open_TimerTrigger - Timer Weekend")
+				numberOpenHour = numberBlindTimerWE_OpenHour.state as DecimalType
+				numberOpenMinute = numberBlindTimerWE_OpenMinute.state as DecimalType
+			}
+
+			// Get and update timer setting from UI
+			var int intOpenHour = numberOpenHour.intValue
+			var int intOpenMinute = numberOpenMinute.intValue
+			
+			// Update blind open timestamp 
+			stringTimestamp_open = ""
+			if (intOpenHour < 10)
+			{
+				stringTimestamp_open = "0"
+			}
+			stringTimestamp_open = stringTimestamp_open + intOpenHour + ":"
+			
+			if (intOpenMinute < 10)
+			{
+				stringTimestamp_open = stringTimestamp_open + "0"
+			}
+			stringTimestamp_open = stringTimestamp_open + intOpenMinute 
+			stringBlindTimerOpenMessage.postUpdate(stringTimestamp_open)
+
+			// Calculate blind open time
+			intBlindOpenTime = intOpenHour * 60 + intOpenMinute
+			intBlindOpenTime = intBlindOpenTime.intValue
+						
+			// Calculate current time in minutes
+			intCurrentTime = now.getMinuteOfDay
+			intCurrentTime = intCurrentTime.intValue
+			
+			// Timer value: Difference between the time to open blind and the current time in minutes
+			intBlindTimerOpen = (intBlindOpenTime - intCurrentTime)
+			intBlindTimerOpen = intBlindTimerOpen.intValue
+
+			// If time to open blind is already gone, add 24 hours in minutes to timer value
+			if (intCurrentTime > intBlindOpenTime)
+			{
+				logDebug("SmartHome", "Blind_Automation_Open_TimerTrigger - Time to open blind is already gone, add 24 hours in minutes")
+				intBlindTimerOpen = intBlindTimerOpen + 1440
+			}
+				
+			// If timer is already set, cancel it
+			if (timerBlindOpen !== null)
+			{ 
+				logDebug("SmartHome", "Blind_Automation_Open_TimerTrigger - timer is already set, cancel it")
+				timerBlindOpen.cancel
+				timerBlindOpen = null
+			}
+			
+			// create timer for open blind
+			logDebug("SmartHome", "Blind_Automation_Open_TimerTrigger - Create and Timer to open blind")
+			msg = "Blind_Automation_Open_TimerTrigger - intBlindTimerOpen: " + intBlindTimerOpen
+			logDebug("SmartHome", msg)
+			msg = "Blind_Automation_Open_TimerTrigger - switchBlindAutomationTimerOpenOnOff: " + switchBlindAutomationTimerOpenOnOff.state
+			logDebug("SmartHome", msg)
+			
+			timerBlindOpen = createTimer(now.plusMinutes(intBlindTimerOpen)) [|
+				// Close blind if timer automation is on
+				if((switchBlindAutomationTimerOpenOnOff.state == ON))
+				{
+					logDebug("SmartHome", "Blind_Automation_Open_TimerTrigger - Signal event to open blind")
+					// signal event to open blind
+					itemBlindOpen_Event.postUpdate(OFF) 
+					itemBlindOpen_Event.postUpdate(ON)
+
+					// set status message - UI control is updated in close routine
+					stringStatusMessage = stringStatus_AutomaticOpen_ByTimer
+				}
+			]
+		}
+	}	
+	finally
+	{
+			// release the lock, so next timer settings change can be processed
+			logDebug("SmartHome", "Blind_Automation_Open_TimerTrigger - Unlock")
+			BlindTimerOpenLock.unlock()
+	}
+	
+	logDebug("SmartHome", "Rule: <Blind_Automation_Open_TimerTrigger> -> exit")
+	
+end
+
+//////////////////////////////////////////////////////////////////
+// Open blinds when signalled 
+
+rule "Blind_Automation_Open"
+
+when
+	
+	Item  itemBlindOpen_Event changed to ON
+
+then
+	
+	//////////////////////////////////////////////////////////////////
+	// Event Handler: Open blinds
+	//////////////////////////////////////////////////////////////////
+	
+	logDebug("SmartHome", "Rule: <Blind_Automation_Open> -> enter")
+
+	// reset trigger signal
+	itemBlindOpen_Event.postUpdate(OFF) 
+
+	// Open blind if automation is initialized and switched on
+	if ((itemBlindInitialized.state == ON) && ((switchBlindAutomationOnOff.state == ON) || (intManualTriggerStatus == 1)))
+	{
+		// send open command to rollershutter
+		logDebug("SmartHome", "Blind_Automation_Open - Open blinds")
+		
+		// reset manual trigger
+		intManualTriggerStatus = 0
+		
+		// Kitchen
+		if (switchBlindAutomationOpen_Room_Kitchen_Window.state == ON)
+		{
+			numberBlindCalibration = numberBlind_Kitchen_Window_Open.state as DecimalType
+			sendCommand(actuatorBlind_Room_Kitchen_Window_BlindsControl, numberBlindCalibration)
+		}
+		// Living Room
+		if (switchBlindAutomationOpen_Room_LivingRoom_Door.state == ON)
+		{
+			numberBlindCalibration = numberBlind_LivingRoom_Door_Open.state as DecimalType
+			sendCommand(actuatorBlind_Room_LivingRoom_Door_BlindsControl, numberBlindCalibration)
+		}
+		if (switchBlindAutomationOpen_Room_LivingRoom_Window.state == ON)
+		{
+			numberBlindCalibration = numberBlind_LivingRoom_Window_Open.state as DecimalType
+			sendCommand(actuatorBlind_Room_LivingRoom_Window_BlindsControl, numberBlindCalibration)
+		}
+		// Study Room
+		if (switchBlindAutomationOpen_Room_StudyRoom_Door.state == ON)
+		{
+			numberBlindCalibration = numberBlind_StudyRoom_Door_Open.state as DecimalType
+			sendCommand(actuatorBlind_Room_StudyRoom_Door_BlindsControl, numberBlindCalibration)
+		}
+		if (switchBlindAutomationOpen_Room_StudyRoom_Window.state == ON)
+		{
+			numberBlindCalibration = numberBlind_StudyRoom_Window_Open.state as DecimalType
+			sendCommand(actuatorBlind_Room_StudyRoom_Window_BlindsControl, numberBlindCalibration)
+		}
+		// Bed Room
+		if (switchBlindAutomationOpen_Room_BedRoom_Window.state == ON)
+		{
+			numberBlindCalibration = numberBlind_BedRoom_Window_Open.state as DecimalType
+			sendCommand(actuatorBlind_Room_BedRoom_Window_BlindsControl, numberBlindCalibration)
+		}
+		// Bath Room
+		if (switchBlindAutomationOpen_Room_BathRoom_Window.state == ON)
+		{
+			numberBlindCalibration = numberBlind_BathRoom_Window_Open.state as DecimalType
+			sendCommand(actuatorBlind_Room_BathRoom_Window_BlindsControl, numberBlindCalibration)
+		}
+
+		// update last rollershutter action information
+		
+		// Update blind open timestamp 
+		stringTimestamp = String::format("%1$tY-%1$tm-%1$td %1$tH:%1$tM:%1$tS", new Date())
+		stringBlindExecutionTime.postUpdate(stringTimestamp)
+		
+		// Update blind open status message 
+		stringBlindStatus.postUpdate(stringStatusMessage)
+		intBlindStatus = 1
+	}
+	
+	logDebug("SmartHome", "Rule: <Blind_Automation_Open> -> exit")
+	
+end
+

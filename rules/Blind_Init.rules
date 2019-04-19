@@ -1,0 +1,198 @@
+////////////////////////////////////////////////////////////////////////////////////////////
+// Blind Automation Initialization
+////////////////////////////////////////////////////////////////////////////////////////////
+// History: 
+// 2019-03-30	Smart Home Automation
+
+//////////////////////////////////////////////////////////////////
+// Imports
+//////////////////////////////////////////////////////////////////
+import org.openhab.core.library.types
+import org.openhab.model.script.actions
+
+// formatting time 
+import java.util.Date
+
+//////////////////////////////////////////////////////////////////
+// global variables
+//////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////
+// UI messages
+val String stringStatus_Init = 								"automatically initialized"
+val String stringStatus_NotInit = 							"not initialized"
+
+//////////////////////////////////////////////////////////////////
+// Blind values
+val int intBlind_LivingRoom_Door_Open = 0
+val int intBlind_StudyRoom_Door_Open = 0
+val int intBlind_LivingRoom_Window_Open = 0
+val int intBlind_Kitchen_Window_Open = 0
+val int intBlind_StudyRoom_Window_Open = 0
+val int intBlind_BedRoom_Window_Open = 0
+val int intBlind_BathRoom_Window_Open = 0
+
+// Calibration values doors
+val int intBlind_LivingRoom_Door_25 = 25
+val int intBlind_StudyRoom_Door_25 = 25
+
+val int intBlind_LivingRoom_Door_50 = 45
+val int intBlind_StudyRoom_Door_50 = 45
+
+val int intBlind_LivingRoom_Door_75 = 60
+val int intBlind_StudyRoom_Door_75 = 60
+
+val int intBlind_LivingRoom_Door_Close = 70
+val int intBlind_StudyRoom_Door_Close = 70
+
+// Calibration values Windows
+val int intBlind_Window_25 = 20
+val int intBlind_Window_50 = 37
+val int intBlind_Window_75 = 50
+val int intBlind_Window_Closed = 75
+
+//////////////////////////////////////////////////////////////////
+// Messages
+var String stringTimestamp = stringStatus_NotInit
+var String stringStatusMessage = stringStatus_NotInit
+
+//////////////////////////////////////////////////////////////////
+// Initialize blind automation after reset
+//////////////////////////////////////////////////////////////////
+ 
+rule "Blind_Automation_Init"
+
+when
+
+	System started
+
+then
+	
+	//////////////////////////////////////////////////////////////////
+	// Event Handler: Blind automation initialization 
+	//////////////////////////////////////////////////////////////////
+	
+	logDebug("SmartHome", "Rule: <Blind_Automation_Init> -> enter")
+	
+	// Wait before initialize automation control to ensure that system is up and running
+	logDebug("SmartHome", "Blind_Automation_Init - Wait for system is ready") 
+	
+	// set automation status to not initialized 
+	itemBlindInitialized.postUpdate(OFF)
+
+	createTimer(now.plusMinutes(1)) [|
+		// start basic initialization
+		logDebug("SmartHome", "Blind_Automation_Init - start initialization")
+
+		// Switch blind automation off for initialization
+		switchBlindAutomationOnOff.postUpdate(OFF)
+
+		// Switch blind open control to timer control 
+		switchBlindAutomationTimerOpenOnOff.postUpdate(ON)
+		// Switch blind close control to astro control
+		switchBlindAutomationTimerCloseOnOff.postUpdate(OFF)
+
+		// set manual trigger control to on
+		switchBlindManualTriggerOpen.postUpdate(OFF)
+		switchBlindManualTriggerClose.postUpdate(OFF)
+		
+		// Include blind in automation control: Open
+		logDebug("SmartHome", "Blind_Automation_Init - Blind automation control <Open> default setting")
+		switchBlindAutomationOpen_Room_Kitchen_Window.postUpdate(ON)
+		switchBlindAutomationOpen_Room_LivingRoom_Door.postUpdate(ON)
+		switchBlindAutomationOpen_Room_LivingRoom_Window.postUpdate(ON)
+		switchBlindAutomationOpen_Room_StudyRoom_Door.postUpdate(ON)
+		switchBlindAutomationOpen_Room_StudyRoom_Window.postUpdate(ON)
+		switchBlindAutomationOpen_Room_BedRoom_Window.postUpdate(OFF)
+		switchBlindAutomationOpen_Room_BathRoom_Window.postUpdate(OFF)
+
+		// Include blind in automation control: Close
+		logDebug("SmartHome", "Blind_Automation_Init - Blind automation control <Close> default setting")
+		switchBlindAutomationClose_Room_Kitchen_Window.postUpdate(ON)
+		switchBlindAutomationClose_Room_LivingRoom_Door.postUpdate(ON)
+		switchBlindAutomationClose_Room_LivingRoom_Window.postUpdate(ON)
+		switchBlindAutomationClose_Room_StudyRoom_Door.postUpdate(ON)
+		switchBlindAutomationClose_Room_StudyRoom_Window.postUpdate(ON)
+		switchBlindAutomationClose_Room_BedRoom_Window.postUpdate(ON)
+		switchBlindAutomationClose_Room_BathRoom_Window.postUpdate(ON)
+
+		// Blind calibration default setting
+		logDebug("SmartHome", "Blind_Automation_Init - Blind calibration default setting")
+		switchBlindCalibration_Room_Kitchen_Window.postUpdate(OFF)
+		switchBlindCalibration_Room_LivingRoom_Door.postUpdate(OFF)
+		switchBlindCalibration_Room_LivingRoom_Window.postUpdate(OFF)
+		switchBlindCalibration_Room_StudyRoom_Door.postUpdate(OFF)
+		switchBlindCalibration_Room_StudyRoom_Window.postUpdate(OFF)
+		switchBlindCalibration_Room_BedRoom_Window.postUpdate(OFF)
+		switchBlindCalibration_Room_BathRoom_Window.postUpdate(OFF)
+		
+		// set default time: 
+		// working days
+		// Open blind at 6:30 am 
+		// Close blind at 9:30 pm 
+		logDebug("SmartHome", "Blind_Automation_Init - Set default open/close time")
+		numberBlindTimerWD_OpenHour.postUpdate(6)
+		numberBlindTimerWD_OpenMinute.postUpdate(30)
+		numberBlindTimerWD_CloseHour.postUpdate(21)
+		numberBlindTimerWD_CloseMinute.postUpdate(30)
+
+		// weekend
+		// Open blind at 7:45 am 
+		// Close blind at 9:45 pm 
+		numberBlindTimerWE_OpenHour.postUpdate(7)
+		numberBlindTimerWE_OpenMinute.postUpdate(45)
+		numberBlindTimerWE_CloseHour.postUpdate(21)
+		numberBlindTimerWE_CloseMinute.postUpdate(45)
+
+		// set default calibration: 
+		logDebug("SmartHome", "Blind_Automation_Init - Set default open calibration values")
+		numberBlind_LivingRoom_Door_Open.postUpdate(intBlind_LivingRoom_Door_Open)
+		numberBlind_StudyRoom_Door_Open.postUpdate(intBlind_StudyRoom_Door_Open)
+		numberBlind_Kitchen_Window_Open.postUpdate(intBlind_Kitchen_Window_Open)
+		numberBlind_LivingRoom_Window_Open.postUpdate(intBlind_LivingRoom_Window_Open)
+		numberBlind_StudyRoom_Window_Open.postUpdate(intBlind_StudyRoom_Window_Open)
+		numberBlind_BedRoom_Window_Open.postUpdate(intBlind_BedRoom_Window_Open)
+		numberBlind_BathRoom_Window_Open.postUpdate(intBlind_BathRoom_Window_Open)
+
+		logDebug("SmartHome", "Blind_Automation_Init - Set default close calibration values")
+		numberBlind_LivingRoom_Door_Close.postUpdate(intBlind_LivingRoom_Door_Close)
+		numberBlind_StudyRoom_Door_Close.postUpdate(intBlind_StudyRoom_Door_Close)
+		numberBlind_Kitchen_Window_Close.postUpdate(intBlind_Kitchen_Window_Close)
+		numberBlind_LivingRoom_Window_Close.postUpdate(intBlind_Window_Closed)
+		numberBlind_StudyRoom_Window_Close.postUpdate(intBlind_Window_Closed)
+		numberBlind_BedRoom_Window_Close.postUpdate(intBlind_Window_Closed)
+		numberBlind_BathRoom_Window_Close.postUpdate(intBlind_Window_Closed)
+
+		// update last blind action information
+		logDebug("SmartHome", "Blind_Automation_Init - Update status information")
+		stringTimestamp = String::format( "%1$tY-%1$tm-%1$td %1$tH:%1$tM:%1$tS", new Date() )
+		stringStatusMessage = stringStatus_Init
+
+		// set event trigger to off
+		itemBlindOpen_Event.postUpdate(OFF)	
+		itemBlindClose_Event.postUpdate(OFF)	
+		
+		// Switch blind automation finally on
+		switchBlindAutomationOnOff.postUpdate(ON)
+		
+		// update last rollershutter action information
+		stringBlindStatus.postUpdate(stringStatusMessage)
+		stringBlindExecutionTime.postUpdate(stringTimestamp)
+		
+		// Wait several seconds before activate automation control 
+		// So that whole system is finally stable before system gets active 
+		logDebug("SmartHome", "Blind_Automation_Init - Set timer before setting to system state initialized")
+		createTimer(now.plusSeconds(20)) [|
+			// re-trigger timer setting update
+			numberBlindTimerWD_OpenHour.postUpdate((numberBlindTimerWD_OpenHour.state as DecimalType).intValue)
+			numberBlindTimerWD_CloseHour.postUpdate((numberBlindTimerWD_CloseHour.state as DecimalType).intValue)
+			
+			// set automation status to not initialized 
+			logDebug("SmartHome", "Blind_Automation_Init - Set system to state initialized")
+			itemBlindInitialized.postUpdate(ON)
+		]
+	]
+
+	logDebug("SmartHome", "Rule: <Blind_Automation_Init> -> exit")
+	
+end

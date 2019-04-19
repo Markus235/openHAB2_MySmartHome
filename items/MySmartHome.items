@@ -1,0 +1,295 @@
+//////////////////////////////////////////
+/// @file MySmartHome.items
+/// @brief Definition of used items
+//////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////////////////
+// History: 
+// 2019-03-30	Smart Home Automation
+
+
+//////////////////////////////////////////
+// Time
+//////////////////////////////////////////
+
+//////////////////////////////////////////
+// Current Time 
+// DateTime 	itemCurrentDateTime						(grpDateTime)		{channel="ntp:ntp:local:dateTime"}
+
+//////////////////////////////////////////
+/// @defgroup Astro_Items Astro_Items
+/// Items for Astro - Timings
+/// @{
+
+DateTime	itemSunRise_Time							(grpAstronomy)		{channel="astro:sun:12345678:rise#start"}
+DateTime	itemSunSet_Time								(grpAstronomy)		{channel="astro:sun:12345678:set#end"}
+String		itemSeason									(grpAstronomy)		{channel="astro:sun:12345678:season#name"}
+
+DateTime	itemSunRise_DateTime_Start					(grpAstronomy)		{channel="astro:sun:12345678:rise#start"}
+DateTime	itemSunRise_DateTime_End					(grpAstronomy)		{channel="astro:sun:12345678:rise#end"}
+
+DateTime	itemSunSet_DateTime_Start					(grpAstronomy)		{channel="astro:sun:12345678:set#start"}
+DateTime	itemSunSet_DateTime_End						(grpAstronomy)		{channel="astro:sun:12345678:set#end"}
+
+DateTime	itemNoon_DateTime_Start						(grpAstronomy)		{channel="astro:sun:12345678:noon#start"}
+DateTime	itemNoon_DateTime_End						(grpAstronomy)		{channel="astro:sun:12345678:noon#end"}
+
+DateTime	itemNight_DateTime_Start					(grpAstronomy)		{channel="astro:sun:12345678:night#start"}
+DateTime	itemNight_DateTime_End						(grpAstronomy)		{channel="astro:sun:12345678:night#end"}
+
+DateTime	itemMorningNight_DateTime_Start				(grpAstronomy)		{channel="astro:sun:12345678:morningNight#start"}
+DateTime	itemMorningNight_DateTime_End				(grpAstronomy)		{channel="astro:sun:12345678:morningNight#end"}
+
+DateTime	itemAstroDawn_DateTime_Start				(grpAstronomy)		{channel="astro:sun:12345678:astroDawn#start"}
+DateTime	itemAstroDawn_DateTime_End					(grpAstronomy)		{channel="astro:sun:12345678:astroDawn#end"}
+
+DateTime	itemNauticDawn_DateTime_Start				(grpAstronomy)		{channel="astro:sun:12345678:nauticDawn#start"}
+DateTime	itemNauticDawn_DateTime_End					(grpAstronomy)		{channel="astro:sun:12345678:nauticDawn#end"}
+
+DateTime	itemCivilDawn_DateTime_Start				(grpAstronomy)		{channel="astro:sun:12345678:civilDawn#start"}
+DateTime	itemCivilDawn_DateTime_End					(grpAstronomy)		{channel="astro:sun:12345678:civilDawn#end"}
+
+DateTime	itemAstroDusk_DateTime_Start				(grpAstronomy)		{channel="astro:sun:12345678:astroDusk#start"}
+DateTime	itemAstroDusk_DateTime_End					(grpAstronomy)		{channel="astro:sun:12345678:astroDusk#end"}
+
+DateTime	itemNauticDusk_DateTime_Start				(grpAstronomy)		{channel="astro:sun:12345678:nauticDusk#start"}
+DateTime	itemNauticDusk_DateTime_End					(grpAstronomy)		{channel="astro:sun:12345678:nauticDusk#end"}
+
+DateTime	itemCivilDusk_DateTime_Start				(grpAstronomy)		{channel="astro:sun:12345678:civilDusk#start"}
+DateTime	itemCivilDusk_DateTime_End					(grpAstronomy)		{channel="astro:sun:12345678:civilDusk#end"}
+
+DateTime	itemEveningNight_DateTime_Start				(grpAstronomy)		{channel="astro:sun:12345678:eveningNight#start"}
+DateTime	itemEveningNight_DateTime_End				(grpAstronomy)		{channel="astro:sun:12345678:eveningNight#end"}
+
+DateTime	itemDaylight_DateTime_Start					(grpAstronomy)		{channel="astro:sun:12345678:daylight#start"}
+DateTime	itemDaylight_DateTime_End					(grpAstronomy)		{channel="astro:sun:12345678:daylight#end"}
+
+/// @} 
+// end of group Astro_Items
+
+//////////////////////////////////////////
+/// @defgroup Online_Devices Online_Devices
+/// Items for Online Devices
+/// @{
+
+Switch switchWiFiRouter_Online							(grpOnline)		{channel="network:device:192_168_1_80:online"}
+Switch switchPrinter_Online				  				(grpOnline)		{channel="network:device:192_168_1_82:online"}
+Switch switchDesktop_Online								(grpOnline)		{channel="network:pingdevice:192_168_1_83:online"}
+Switch switchNotebook_Online							(grpOnline)		{channel="network:device:192_168_1_84:online"}
+Switch switchiPad_Online			  					(grpOnline)		{channel="network:device:192_168_1_85:online"}
+Switch switchMobilePhone_Online		  					(grpOnline)		{channel="network:device:192_168_1_86:online"}
+Switch switchAudio_LivingRoom_Online					(grpOnline)		{channel="network:device:192_168_1_87:online"}
+Switch switchTV_LivingRoom_Online  						(grpOnline)		{channel="network:pingdevice:192_168_1_88:online"}
+
+/// @} // end of group Online_Devices
+
+//////////////////////////////////////////
+/// @defgroup Outdoor_Devices Outdoor_Devices
+/// Items for Outdoor Devices
+/// @{
+
+//////////////////////////////////////////
+// Items for Sensor Devices
+
+Switch switchSensor_Trigger_Garden_BinarySensor					(grpSensor)		{channel="zwave:device:11223344:node9:sensor_binary"}
+Number numberSensor_Humidity_Garden_SensorRelativeHumidity	  	(grpSensor)		{channel="zwave:device:11223344:node9:sensor_relhumidity"}
+Number numberSensor_Temperature_Garden_SensorTemperature		(grpSensor)		{channel="zwave:device:11223344:node9:sensor_temperature"}
+Number numberSensor_Luminance_Garden_SensorLuminance			(grpSensor)		{channel="zwave:device:11223344:node9:sensor_luminance"}
+Number numberSensor_Battery_Garden_BatteryLevel  				(grpSensor)		{channel="zwave:device:11223344:node9:battery-level"}
+
+//////////////////////////////////////////
+// Sunblind items 
+Rollershutter actuatorSunBlind_Garden_Terrace_BlindsControl	  	(grpSunBlind)	{channel="zwave:device:11223344:node10:blinds_control"}
+
+/// @} 
+// end of group Outdoor_Devices
+
+//////////////////////////////////////////
+/// @defgroup WiFi_Automation WiFi_Automation
+/// Items for WiFi Automation
+/// @{
+
+//////////////////////////////////////////
+// WiFi Switch 
+Switch actuatorWallPlug_WiFi_Switch						(grpWallplug)	{channel="zwave:device:11223344:node8:switch_binary"}
+
+//////////////////////////////////////////
+// Switch WiFi automation control: on/off
+
+Switch switchWiFiTimerAutomationOn						(grpVirtualSwitch)
+Switch switchWiFiTimerAutomationOff						(grpVirtualSwitch)
+Switch switchWiFiDeviceAutomationOn						(grpVirtualSwitch)
+Switch switchWiFiDeviceAutomationOff					(grpVirtualSwitch)
+
+//////////////////////////////////////////
+// Switch blind automation next action (off/on) - visualisation only
+
+Switch switchWifiAutomationTrigger						(grpVirtualSwitch)
+
+//////////////////////////////////////////
+// Action Information
+String stringWiFiStatus									(grpMessage)
+
+//////////////////////////////////////////
+// Timer Setting
+Number	numberWiFiTimerOnHour							(grpTimerSetting)
+Number	numberWiFiTimerOnMinute							(grpTimerSetting)
+Number	numberWiFiTimerOffHour							(grpTimerSetting)
+Number	numberWiFiTimerOffMinute						(grpTimerSetting)
+
+String	stringWifiTimerOnMessage	"%s"				(grpMessage)
+String	stringWifiTimerOffMessage	"%s"				(grpMessage)
+
+/// @}
+// end of group WiFi_Automation
+
+//////////////////////////////////////////
+/// @defgroup Blind_Automation Blind_Automation
+/// Items for Blind Automation
+/// @{
+
+//////////////////////////////////////////
+// Rollershutters items 
+Rollershutter actuatorBlind_Room_Kitchen_Window_BlindsControl		(grpBlind)	{channel="zwave:device:11223344:node1:blinds_control"}
+Rollershutter actuatorBlind_Room_LivingRoom_Door_BlindsControl 		(grpBlind)	{channel="zwave:device:11223344:node2:blinds_control"}
+Rollershutter actuatorBlind_Room_LivingRoom_Window_BlindsControl	(grpBlind)	{channel="zwave:device:11223344:node3:blinds_control"}
+Rollershutter actuatorBlind_Room_StudyRoom_Door_BlindsControl		(grpBlind)	{channel="zwave:device:11223344:node4:blinds_control"}
+Rollershutter actuatorBlind_Room_StudyRoom_Window_BlindsControl		(grpBlind)	{channel="zwave:device:11223344:node5:blinds_control"}
+Rollershutter actuatorBlind_Room_BedRoom_Window_BlindsControl		(grpBlind)	{channel="zwave:device:11223344:node6:blinds_control"}
+Rollershutter actuatorBlind_Room_BathRoom_Window_BlindsControl		(grpBlind)	{channel="zwave:device:11223344:node7:blinds_control"}
+
+//////////////////////////////////////////
+// Blind automation initialzed
+Switch	itemBlindInitialized										(grpVirtualSwitch)
+
+//////////////////////////////////////////
+// Switch blind automation control on/off
+Switch switchBlindAutomationOnOff									(grpVirtualSwitch)
+Switch switchBlindAutomationTimerOpenOnOff							(grpVirtualSwitch)
+Switch switchBlindAutomationTimerCloseOnOff							(grpVirtualSwitch)
+
+//////////////////////////////////////////
+// Events for blind automation
+Switch	itemBlindClose_Event										(grpVirtualEvent)
+Switch	itemBlindOpen_Event											(grpVirtualEvent)
+
+//////////////////////////////////////////
+// Switch blind automation manual trigger Open/Close
+Switch switchBlindManualTriggerOpen									(grpVirtualEvent)
+Switch switchBlindManualTriggerClose								(grpVirtualEvent)
+
+//////////////////////////////////////////
+// Include blind in automation control - OPEN
+Switch switchBlindAutomationOpen_Room_Kitchen_Window				(grpVirtualSwitch)
+Switch switchBlindAutomationOpen_Room_LivingRoom_Door				(grpVirtualSwitch)
+Switch switchBlindAutomationOpen_Room_LivingRoom_Window				(grpVirtualSwitch)
+Switch switchBlindAutomationOpen_Room_StudyRoom_Door				(grpVirtualSwitch)
+Switch switchBlindAutomationOpen_Room_StudyRoom_Window				(grpVirtualSwitch)
+Switch switchBlindAutomationOpen_Room_BedRoom_Window				(grpVirtualSwitch)
+Switch switchBlindAutomationOpen_Room_BathRoom_Window				(grpVirtualSwitch)
+
+
+//////////////////////////////////////////
+// Include blind in automation control - CLOSE
+Switch switchBlindAutomationClose_Room_Kitchen_Window				(grpVirtualSwitch)
+Switch switchBlindAutomationClose_Room_LivingRoom_Door				(grpVirtualSwitch)
+Switch switchBlindAutomationClose_Room_LivingRoom_Window			(grpVirtualSwitch)
+Switch switchBlindAutomationClose_Room_StudyRoom_Door				(grpVirtualSwitch)
+Switch switchBlindAutomationClose_Room_StudyRoom_Window				(grpVirtualSwitch)
+Switch switchBlindAutomationClose_Room_BedRoom_Window				(grpVirtualSwitch)
+Switch switchBlindAutomationClose_Room_BathRoom_Window				(grpVirtualSwitch)
+
+//////////////////////////////////////////
+// Events for blind calibration
+Switch	itemBlindCalibration_Event									(grpVirtualEvent)
+
+//////////////////////////////////////////
+// Include blind in calibration control
+Switch switchBlindCalibration_Room_Kitchen_Window					(grpVirtualSwitch)
+Switch switchBlindCalibration_Room_LivingRoom_Door					(grpVirtualSwitch)
+Switch switchBlindCalibration_Room_LivingRoom_Window				(grpVirtualSwitch)
+Switch switchBlindCalibration_Room_StudyRoom_Door					(grpVirtualSwitch)
+Switch switchBlindCalibration_Room_StudyRoom_Window					(grpVirtualSwitch)
+Switch switchBlindCalibration_Room_BedRoom_Window					(grpVirtualSwitch)
+Switch switchBlindCalibration_Room_BathRoom_Window					(grpVirtualSwitch)
+
+//////////////////////////////////////////
+// Controls for Blind Automation UI
+
+// Time of last rollershutter action
+String stringBlindExecutionTime							(grpMessage)
+
+//////////////////////////////////////////
+// Action Information
+String stringBlindStatus								(grpMessage)
+
+//////////////////////////////////////////
+// Timer Setting
+
+// working days
+Number	numberBlindTimerWD_OpenHour 					(grpTimerSetting)
+Number	numberBlindTimerWD_OpenMinute 					(grpTimerSetting)
+Number	numberBlindTimerWD_CloseHour	 				(grpTimerSetting)
+Number	numberBlindTimerWD_CloseMinute 					(grpTimerSetting)
+
+// weekend days
+Number	numberBlindTimerWE_OpenHour 	 				(grpTimerSetting)
+Number	numberBlindTimerWE_OpenMinute  					(grpTimerSetting)
+Number	numberBlindTimerWE_CloseHour	 				(grpTimerSetting)
+Number	numberBlindTimerWE_CloseMinute  				(grpTimerSetting)
+
+//////////////////////////////////////////
+// Calibration Setting
+
+// Blind Open
+Number 	numberBlind_LivingRoom_Door_Open 				(grpTimerSetting)
+Number 	numberBlind_StudyRoom_Door_Open 				(grpTimerSetting)
+
+Number 	numberBlind_Kitchen_Window_Open 				(grpTimerSetting)
+Number 	numberBlind_LivingRoom_Window_Open				(grpTimerSetting)
+Number 	numberBlind_StudyRoom_Window_Open 				(grpTimerSetting)
+Number 	numberBlind_BedRoom_Window_Open 				(grpTimerSetting)
+Number 	numberBlind_BathRoom_Window_Open				(grpTimerSetting)
+
+// Blind Close
+Number 	numberBlind_LivingRoom_Door_Close 				(grpTimerSetting)
+Number 	numberBlind_StudyRoom_Door_Close 				(grpTimerSetting)
+
+Number 	numberBlind_Kitchen_Window_Close 				(grpTimerSetting)
+Number 	numberBlind_LivingRoom_Window_Close				(grpTimerSetting)
+Number 	numberBlind_StudyRoom_Window_Close 				(grpTimerSetting)
+Number 	numberBlind_BedRoom_Window_Close 				(grpTimerSetting)
+Number 	numberBlind_BathRoom_Window_Close 				(grpTimerSetting)
+
+//////////////////////////////////////////
+// Blind Messages
+
+String	stringBlindTimerOpenMessage						"%s"	(grpMessage)
+String	stringBlindTimerCloseMessage					"%s"	(grpMessage)
+
+/// @}
+// end of group Blind_Automation
+
+//////////////////////////////////////////
+/// @defgroup System System
+/// Items for System Automation
+/// @{
+
+Switch OpenHabRestart  									(grpVirtualEvent)
+Switch SystemRestart   									(grpVirtualEvent)
+Switch SystemLogFileCleanup								(grpVirtualEvent)
+Switch SystemLogFileSnapShot							(grpVirtualEvent)
+
+// display log file
+String stringCopyLogs 									(grpMessage)	
+
+/// @} 
+// end of group System
+
+//////////////////////////////////////////
+// Debug and Test
+//////////////////////////////////////////
+
+Switch	itemTest_Event
+
+// vim: syntax=Xtend

@@ -1,0 +1,171 @@
+////////////////////////////////////////////////////////////////////////////////////////////
+// System Rules
+////////////////////////////////////////////////////////////////////////////////////////////
+// History: 
+// 2019-03-30	Smart Home Automation
+ 
+//////////////////////////////////////////////////////////////////
+// Imports
+//////////////////////////////////////////////////////////////////
+import org.openhab.core.library.types.*
+import org.openhab.model.script.actions.*
+
+
+//////////////////////////////////////////////////////////////////
+// global variables
+//////////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////////////////
+// Initialize System 
+//////////////////////////////////////////////////////////////////
+ 
+rule "System_Init"
+
+when
+
+	System started
+
+then
+	
+	//////////////////////////////////////////////////////////////////
+	// Event Handler: System initialization 
+	//////////////////////////////////////////////////////////////////
+	
+	logDebug("SmartHome", "Rule: <System_Init> -> enter")
+	
+	// Switch blind automation off for initialization
+	OpenHabRestart.postUpdate(OFF)
+	SystemRestart.postUpdate(OFF)
+	SystemLogFileCleanup.postUpdate(OFF)
+	SystemLogFileSnapShot.postUpdate(OFF)
+
+	switchWiFiRouter_Online.state = OFF
+	switchPrinter_Online.state = OFF
+	switchDesktop_Online.state = OFF
+	switchAudio_LivingRoom_Online.state = OFF
+	switchiPad_Online.state = OFF
+	switchNotebook_Online.state = OFF
+	switchTV_LivingRoom_Online.state = OFF
+	switchMobilePhone_Online.state = OFF
+	
+	logDebug("SmartHome", "Rule: <System_Init> -> exit")
+	
+end
+
+
+/////////////////////////////////////////////////////////////////
+// Trigger a OpenHab restart
+//////////////////////////////////////////////////////////////////
+ 
+rule "OpenHab_Restart"
+
+when
+
+	Item OpenHabRestart changed to ON
+	
+then
+	
+	//////////////////////////////////////////////////////////////////
+	// Event Handler: Restart OpenHab 
+	//////////////////////////////////////////////////////////////////
+	
+	logDebug("SmartHome", "Rule: <OpenHab_Restart> -> enter")
+	
+	if (OpenHabRestart.state == ON) 
+	{
+        logInfo("SmartHome", "Manual triggered OpenHab restart...")
+		executeCommandLine("sudo@@/etc/init.d/openhab2@@restart")
+    }
+
+	logDebug("SmartHome", "Rule: <OpenHab_Restart> -> exit")
+
+end
+
+/////////////////////////////////////////////////////////////////
+// Trigger a OpenHab restart
+//////////////////////////////////////////////////////////////////
+ 
+rule "System_Restart"
+
+when
+
+	Item SystemRestart changed to ON
+	
+then
+	
+	//////////////////////////////////////////////////////////////////
+	// Event Handler: Restart OpenHab 
+	//////////////////////////////////////////////////////////////////
+	
+	logDebug("SmartHome", "Rule: <System_Restart> -> enter")
+	
+	if (SystemRestart.state == ON) 
+	{
+		logInfo("SmartHome", "Manual triggered system restart...")			 
+		executeCommandLine("sudo@@reboot") 		
+	}
+
+	logDebug("SmartHome", "Rule: <System_Restart> -> exit")
+
+end
+
+/////////////////////////////////////////////////////////////////
+// Trigger a Clean up of log files
+//////////////////////////////////////////////////////////////////
+ 
+rule "System_LogFile_Cleanup"
+
+when
+
+	Item SystemLogFileCleanup changed to ON
+	
+then
+	
+	//////////////////////////////////////////////////////////////////
+	// Event Handler: Clean up of log files
+	//////////////////////////////////////////////////////////////////
+	
+	logDebug("SmartHome", "Rule: <System_LogFile_Cleanup> -> enter")
+	
+	if (SystemLogFileCleanup.state == ON) 
+	{
+		logInfo("SmartHome", "Manual triggered clean up of log files...")			 
+		executeCommandLine("rm@@/var/log/openhab2/events.log")
+		executeCommandLine("rm@@/var/log/openhab2/openhab.log")
+	}
+
+	logDebug("SmartHome", "Rule: <System_LogFile_Cleanup> -> exit")
+
+end
+
+
+/////////////////////////////////////////////////////////////////
+// Trigger Snapshot of log files
+//////////////////////////////////////////////////////////////////
+ 
+rule "System_LogFile_Snapshot"
+
+when
+
+	Time cron "0 45 1 * * ?"
+	or
+	Item SystemLogFileSnapShot changed to ON 
+		
+then
+	
+	//////////////////////////////////////////////////////////////////
+	// Event Handler: Take log file snapshot
+	//////////////////////////////////////////////////////////////////
+	
+	logDebug("SmartHome", "Rule: <System_LogFile_Snapshot> -> enter")
+	
+	logInfo("SmartHome", "Take regular snapshot of log files...")			 
+	executeCommandLine("/etc/openhab2/scripts/openhablogs.sh")
+
+	logDebug("SmartHome", "Rule: <System_LogFile_Snapshot> -> exit")
+
+end
+
+
+

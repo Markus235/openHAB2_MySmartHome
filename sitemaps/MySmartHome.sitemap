@@ -1,0 +1,384 @@
+//////////////////////////////////////////
+/// @file MySmartHome.sitemap
+/// @brief Definition of Site Map
+//////////////////////////////////////////
+
+//////////////////////////////////////////
+// History: 
+// 2019-03-30	Smarthome Automation
+
+sitemap MySmartHome label="My SmartHome"
+{
+	////////////////////////////////////////////////////////////////////////////////
+	/// Overview
+	////////////////////////////////////////////////////////////////////////////////
+
+	//Frame 
+	//{
+    //	Text item=itemCurrentDateTime													icon="calendar"				label="[%1$tA, %1$td.%1$tm.%1$tY, %1$tH:%1$tM]"
+	//}
+
+	Frame 
+	{
+		Text item=itemAstroDawn_DateTime_Start											icon="sun"					label="Sunrise [%1$tH:%1$tM]"
+		Text item=itemSunSet_DateTime_End												icon="moon"					label="Sunset [%1$tH:%1$tM]"
+		Text item=numberSensor_Humidity_Garden_SensorRelativeHumidity	  				icon="humidity-60"			label="Humidity [%s]"
+		Text item=numberSensor_Temperature_Garden_SensorTemperature	 					icon="temperature"			label="Temperature [%s]"
+		Text item=numberSensor_Luminance_Garden_SensorLuminance	  						icon="light"				label="Luminance [%s]"
+		Text item=numberSensor_Battery_Garden_BatteryLevel								icon="signal"				label="Battery [%s]"
+	}
+
+	////////////////////////////////////////////////////////////////////////////////
+	/// Rooms
+	////////////////////////////////////////////////////////////////////////////////
+
+	Frame label="Rooms" 
+	{
+		////////////////////////////////////////////////////////////////////////////////
+		/// Kitchen
+		////////////////////////////////////////////////////////////////////////////////
+		Text	icon="sofa"			label="Living Room"  
+		{
+			Slider 	item=actuatorBlind_Room_Kitchen_Window_BlindsControl  				icon="blinds-30"	label="Blind - Window"
+		}
+
+		////////////////////////////////////////////////////////////////////////////////
+		/// Living Room
+		////////////////////////////////////////////////////////////////////////////////
+		Text	icon="sofa"			label="Living Room"  
+		{
+			Slider	item=actuatorBlind_Room_LivingRoom_Door_BlindsControl  				icon="blinds-30"	label="Blind - Door"
+			Slider 	item=actuatorBlind_Room_LivingRoom_Window_BlindsControl  			icon="blinds-30"	label="Blind - Window"
+			Text 	item=switchTV_LivingRoom_Online       								icon="network"		label="TV"					visibility=[switchTV_LivingRoom_Online==ON]
+			Text 	item=switchAudio_LivingRoom_Online   								icon="network"		label="Audio"				visibility=[switchAudio_LivingRoom_Online==ON]
+			Text	item=switchiPad_Online 												icon="network"    	label="iPad"				visibility=[switchiPad_Online==ON]
+			Text 	item=switchMobilePhone_Online										icon="network"		label="Mobile Phone"		visibility=[switchMobilePhone_Online==ON]	
+		}
+
+		////////////////////////////////////////////////////////////////////////////////
+		/// Study Room
+		////////////////////////////////////////////////////////////////////////////////
+		Text	icon="office"	 	label="Study Room"
+		{
+			Slider 	item=actuatorBlind_Room_StudyRoom_Door_BlindsControl  				icon="blinds-30"	label="Blind -Door"
+			Slider 	item=actuatorBlind_Room_StudyRoom_Window_BlindsControl  			icon="blinds-30"	label="Blind - Window"
+			Switch	item=actuatorWallPlug_WiFi_Switch									icon="poweroutlet"	label="WiFi Router"
+			Text 	item=switchWiFiRouter_Online										icon="network"    	label="WiFi Router"			visibility=[switchWiFiRouter_Online==ON]
+			Text 	item=switchDesktop_Online    										icon="network"    	label="Desktop PC"			visibility=[switchDesktop_Online==ON]
+			Text 	item=switchNotebook_Online   										icon="network"    	label="Notebook"			visibility=[switchNotebook_Online==ON]	
+			Text 	item=switchPrinter_Online											icon="network"    	label="Printer"				visibility=[switchPrinter_Online==ON]	
+		}
+
+		////////////////////////////////////////////////////////////////////////////////
+		/// Bed Room
+		////////////////////////////////////////////////////////////////////////////////
+		Text	icon="bedroom" 		label="Bedroom"
+		{
+			Slider item=actuatorBlind_Room_BedRoom_Window_BlindsControl   				icon="blinds-30"	label="Blind Window"
+		}
+
+		////////////////////////////////////////////////////////////////////////////////
+		/// Bath Room
+		////////////////////////////////////////////////////////////////////////////////
+		Text	icon="bath"		 	label="Bathroom"
+		{
+			Slider item=actuatorBlind_Room_BathRoom_Window_BlindsControl				icon="blinds-30"	label="Blind Window"
+		}
+
+		////////////////////////////////////////////////////////////////////////////////
+		/// Garden
+		////////////////////////////////////////////////////////////////////////////////
+		Text	icon="garden"		label="Garden"
+		{
+			Slider item=actuatorSunBlind_Garden_Terrace_BlindsControl  					icon="terrace"		label="Sunblind"
+			Switch item=actuatorSunBlind_Garden_Terrace_BlindsControl  					icon="terrace"		label="Sunblind"
+			Text 	item=numberSensor_Humidity_Garden_SensorRelativeHumidity	  		icon="humidity-60"	label="Humidity [%s]"
+			Text 	item=numberSensor_Temperature_Garden_SensorTemperature	 			icon="temperature"	label="Temperature [%s]"
+			Text 	item=numberSensor_Luminance_Garden_SensorLuminance	  				icon="light"		label="Luminance [%s]"
+			Text 	item=numberSensor_Battery_Garden_BatteryLevel						icon="signal"		label="Battery [%s]"
+		}
+	}
+		
+	////////////////////////////////////////////////////////////////////////////////
+	/// Functional Groups
+	////////////////////////////////////////////////////////////////////////////////
+	
+	Frame label="Functional Groups" 
+	{
+		////////////////////////////////////////////////////////////////////////////////
+		/// Blinds
+		////////////////////////////////////////////////////////////////////////////////
+		Text	icon="blinds" 		label="Blinds" 
+		{
+			Slider item=actuatorBlind_Room_Kitchen_Window_BlindsControl  				icon="blinds"  		label="Kitchen Window"
+			Switch item=actuatorBlind_Room_Kitchen_Window_BlindsControl  				icon="blinds"		label="Kitchen Window"		
+			Slider item=actuatorBlind_Room_LivingRoom_Door_BlindsControl  				icon="blinds"		label="Living Room Door"
+			Switch item=actuatorBlind_Room_LivingRoom_Door_BlindsControl  				icon="blinds"		label="Living Room Door"	
+			Slider item=actuatorBlind_Room_LivingRoom_Window_BlindsControl  			icon="blinds"		label="Living Room Door Window"
+			Switch item=actuatorBlind_Room_LivingRoom_Window_BlindsControl  			icon="blinds"		label="Living Room Door Window"	
+			Slider item=actuatorBlind_Room_StudyRoom_Door_BlindsControl  				icon="blinds"		label="Study Room Door"
+			Switch item=actuatorBlind_Room_StudyRoom_Door_BlindsControl  				icon="blinds"		label="Study Room Door"		
+			Slider item=actuatorBlind_Room_StudyRoom_Window_BlindsControl  				icon="blinds"		label="Study Room Window"
+			Switch item=actuatorBlind_Room_StudyRoom_Window_BlindsControl  				icon="blinds"		label="Study Room Window"
+			Slider item=actuatorBlind_Room_BedRoom_Window_BlindsControl   				icon="blinds"		label="Bedroom Window"
+			Switch item=actuatorBlind_Room_BedRoom_Window_BlindsControl   				icon="blinds"		label="Bedroom Window"
+			Slider item=actuatorBlind_Room_BathRoom_Window_BlindsControl  				icon="blinds"		label="Bathroom Window"
+			Switch item=actuatorBlind_Room_BathRoom_Window_BlindsControl  				icon="blinds"		label="Bathroom Window"
+		}
+
+		////////////////////////////////////////////////////////////////////////////////
+		/// Plugs
+		////////////////////////////////////////////////////////////////////////////////
+		Text	icon="poweroutlet"			label="Steckdosen"  
+		{
+			Switch	item=actuatorWallPlug_WiFi_Switch									icon="switch"				label="WiFi"
+		}
+
+		////////////////////////////////////////////////////////////////////////////////
+		/// Online
+		////////////////////////////////////////////////////////////////////////////////
+		Text	icon="network" 		label="Online" 
+		{
+			Text item=switchWiFiRouter_Online											icon="network"    	label="WiFi Router"					visibility=[switchWiFiRouter_Online==ON]
+			Text item=switchPrinter_Online					  							icon="network"    	label="Printer"						visibility=[switchPrinter_Online==ON]
+			Text item=switchDesktop_Online 		   										icon="network"    	label="Desktop"						visibility=[switchDesktop_Online==ON]
+			Text item=switchNotebook_Online   											icon="network"    	label="Notebook"					visibility=[switchNotebook_Online==ON]	
+			Text item=switchiPad_Online		 											icon="network"    	label="iPad"						visibility=[switchiPad_Online==ON]
+			Text item=switchMobilePhone_Online											icon="network"		label="Mobile Phone"				visibility=[switchMobilePhone_Online==ON]	
+			Text item=switchAudio_LivingRoom_Online										icon="network"    	label="Audio-Living Room"			visibility=[switchAudio_LivingRoom_Online==ON]
+			Text item=switchTV_LivingRoom_Online										icon="network"		label="TV-Living Room"				visibility=[switchTV_LivingRoom_Online==ON]
+		}
+		
+		////////////////////////////////////////////////////////////////////////////////
+		/// System
+		////////////////////////////////////////////////////////////////////////////////
+		Text	icon="settings" 			label="System"
+		{
+			Text item=stringCopyLogs label="events.log" icon="settings" 
+			{ 
+				Webview url="http://smarthome:8080/static/events.log" height=20
+			}
+			Text item=stringCopyLogs label="openhab.log" icon="settings" 
+			{
+				Webview url="http://smarthome:8080/static/openhab.log" height=20
+			} 
+			Switch 	item=SystemLogFileSnapShot											icon="switch"				label="Snapshot of Log Files"
+			Switch	item=SystemLogFileCleanup											icon="switch"				label="Clean-up Log Files"
+			Switch  item=OpenHabRestart													icon="switch"				label="openHAB Restart"
+			Switch  item=SystemRestart													icon="switch"				label="System Restart"
+		}
+	}	
+
+	////////////////////////////////////////////////////////////////////////////////
+	/// Automation Control
+	////////////////////////////////////////////////////////////////////////////////
+	
+	Frame label="Automatisierung" 
+	{
+		////////////////////////////////////////////////////////////////////////////////
+		/// Blind Automation Control	- Show status		
+		Text	item=switchBlindAutomationOnOff											icon="switch"				label="Blind Automation (on/off)"
+
+		////////////////////////////////////////////////////////////////////////////////
+		/// Blind Automation Control	Settings		
+		////////////////////////////////////////////////////////////////////////////////
+		Text 																			icon="settings" 			label="Blind Automation"
+		{
+			Switch	item=switchBlindAutomationOnOff										icon="switch"				label="Blind Automation (on/off)"
+			
+			////////////////////////////////////////////////////////////////////////////////
+			/// Settings
+			Text 																		icon="settings" 			label="Settings"
+			{
+				////////////////////////////////////////////////////////////////////////////////
+				// Group Settings - Open
+				Text 																		icon="window" 		label="Blind - Open"
+				{
+					Switch 	item=switchBlindAutomationOpen_Room_Kitchen_Window			icon="switch"		label="Kitchen - Window"
+					Switch 	item=switchBlindAutomationOpen_Room_LivingRoom_Door			icon="switch"		label="Living Room - Door"
+					Switch 	item=switchBlindAutomationOpen_Room_LivingRoom_Window		icon="switch"		label="Living Room - Window"
+					Switch 	item=switchBlindAutomationOpen_Room_StudyRoom_Door			icon="switch"		label="Study Room - Door"
+					Switch	item=switchBlindAutomationOpen_Room_StudyRoom_Window		icon="switch"		label="Study Room - Window"
+					Switch	item=switchBlindAutomationOpen_Room_BedRoom_Window			icon="switch"		label="Bedroom  - Window"
+					Switch 	item=switchBlindAutomationOpen_Room_BathRoom_Window			icon="switch"		label="Bathroom - Window"
+				}
+				
+				////////////////////////////////////////////////////////////////////////////////
+				/// Group Settings - Close
+				Text  																		icon="blinds" 		label="Blind  - Close"
+				{
+					Switch 	item=switchBlindAutomationClose_Room_Kitchen_Window			icon="switch"		label="Kitchen - Window"
+					Switch 	item=switchBlindAutomationClose_Room_LivingRoom_Door		icon="switch"		label="Living Room - Door"
+					Switch 	item=switchBlindAutomationClose_Room_LivingRoom_Window		icon="switch"		label="Living Room - Window"
+					Switch 	item=switchBlindAutomationClose_Room_StudyRoom_Door			icon="switch"		label="Study Room - Door"
+					Switch 	item=switchBlindAutomationClose_Room_StudyRoom_Window		icon="switch"		label="Study Room - Window"
+					Switch 	item=switchBlindAutomationClose_Room_BedRoom_Window			icon="switch"		label="Bedroom - Window"
+					Switch 	item=switchBlindAutomationClose_Room_BathRoom_Window		icon="switch"		label="Bathroom - Window"
+				}
+				
+				////////////////////////////////////////////////////////////////////////////////
+				/// Timer Settings
+				Text 																	icon="clock" 			label="Timer Settings" 
+				{
+					// Display timer setting
+					Text	item=stringBlindTimerOpenMessage							icon="clock" 			label="Open at [%s]"
+					Text	item=stringBlindTimerCloseMessage							icon="clock" 			label="Close at [%s]"
+					Text 	item=itemCivilDawn_DateTime_Start							icon="sun"				label="Sunrise [%1$tH:%1$tM]"
+					Text 	item=itemCivilDusk_DateTime_End								icon="moon"				label="Sunset [%1$tH:%1$tM]"
+				
+					// Switch timer control on
+					Switch	item=switchBlindAutomationTimerOpenOnOff					icon="switch"			label="Open (Astro/Timer)"
+					Switch	item=switchBlindAutomationTimerCloseOnOff					icon="switch"			label="Close (Astro/Timer)"	
+
+					Text  																icon="settings"			label="Timer - Open" 
+					{
+						Setpoint	item=numberBlindTimerWD_OpenHour					minValue=0	maxValue=23  step=1		icon="clock"		label="Hour (Working Day) [%d]"
+						Setpoint	item=numberBlindTimerWD_OpenMinute					minValue=0	maxValue=59	 step=1		icon="clock"		label="Minute (Working Day) [%d]"
+
+						Setpoint	item=numberBlindTimerWE_OpenHour					minValue=0	maxValue=23	 step=1		icon="clock"		label="Hour (Weekend) [%d]"
+						Setpoint	item=numberBlindTimerWE_OpenMinute					minValue=0	maxValue=59	 step=1		icon="clock"		label="Minute (Weekend) [%d]"
+					}
+					Text 																icon="settings" 			label="Timer - Close" 
+					{
+						Setpoint	item=numberBlindTimerWD_CloseHour					minValue=0	maxValue=23  step=1		icon="clock"		label="Hour (Working Day) [%d]"
+						Setpoint	item=numberBlindTimerWD_CloseMinute					minValue=0	maxValue=59	 step=1		icon="clock"		label="Minute (Working Day) [%d]"
+
+						Setpoint	item=numberBlindTimerWE_CloseHour					minValue=0	maxValue=23	 step=1		icon="clock"		label="Hour (Weekend) [%d]"
+						Setpoint	item=numberBlindTimerWE_CloseMinute					minValue=0	maxValue=59	 step=1		icon="clock"		label="Minute (Weekend) [%d]"
+					}
+				}
+
+				////////////////////////////////////////////////////////////////////////////////
+				/// Astro Data	
+				Text 																	icon="calendar" 		label="Astro Data" 
+				{
+					Text 	item=itemDaylight_DateTime_Start							label="Daylight-Start [%1$tA, %1$td.%1$tm.%1$tY, %1$tH:%1$tM]"	
+					Text 	item=itemDaylight_DateTime_End								label="Daylight-End [%1$tA, %1$td.%1$tm.%1$tY, %1$tH:%1$tM]"	
+
+					Text 	item=itemNight_DateTime_Start								label="Night-Start [%1$tA, %1$td.%1$tm.%1$tY, %1$tH:%1$tM]"	
+					Text 	item=itemNight_DateTime_End									label="Night-End [%1$tA, %1$td.%1$tm.%1$tY, %1$tH:%1$tM]"	
+
+					Text 	item=itemSunRise_DateTime_Start								label="Sunrise-Start [%1$tA, %1$td.%1$tm.%1$tY, %1$tH:%1$tM]"
+					Text 	item=itemSunRise_DateTime_End								label="SunRise-End [%1$tA, %1$td.%1$tm.%1$tY, %1$tH:%1$tM]"	
+
+					Text 	item=itemSunSet_DateTime_Start								label="SunSet-Start [%1$tA, %1$td.%1$tm.%1$tY, %1$tH:%1$tM]"	
+					Text 	item=itemSunSet_DateTime_End								label="SunSet-End [%1$tA, %1$td.%1$tm.%1$tY, %1$tH:%1$tM]"	
+					
+					Text 	item=itemNoon_DateTime_Start								label="Noon-Start [%1$tA, %1$td.%1$tm.%1$tY, %1$tH:%1$tM]"	
+					Text 	item=itemNoon_DateTime_End									label="Noon-End [%1$tA, %1$td.%1$tm.%1$tY, %1$tH:%1$tM]"	
+
+					Text 	item=itemAstroDawn_DateTime_Start							label="AstroDawn-Start [%1$tA, %1$td.%1$tm.%1$tY, %1$tH:%1$tM]"	
+					Text 	item=itemAstroDawn_DateTime_End								label="AstroDawn-End [%1$tA, %1$td.%1$tm.%1$tY, %1$tH:%1$tM]"
+					
+					Text 	item=itemNauticDawn_DateTime_Start							label="NauticDawn-Start [%1$tA, %1$td.%1$tm.%1$tY, %1$tH:%1$tM]"	
+					Text 	item=itemNauticDawn_DateTime_End							label="NauticDawn-End [%1$tA, %1$td.%1$tm.%1$tY, %1$tH:%1$tM]"	
+					
+					Text 	item=itemCivilDawn_DateTime_Start							label="CivilDawn-Start [%1$tA, %1$td.%1$tm.%1$tY, %1$tH:%1$tM]"		
+					Text 	item=itemCivilDawn_DateTime_End								label="CivilDawn-End [%1$tA, %1$td.%1$tm.%1$tY, %1$tH:%1$tM]"	
+					
+					Text 	item=itemAstroDusk_DateTime_Start							label="AstroDusk-Start [%1$tA, %1$td.%1$tm.%1$tY, %1$tH:%1$tM]"		
+					Text 	item=itemAstroDusk_DateTime_End								label="AstroDusk-End [%1$tA, %1$td.%1$tm.%1$tY, %1$tH:%1$tM]"
+					
+					Text 	item=itemNauticDusk_DateTime_Start							label="NauticDusk-Start [%1$tA, %1$td.%1$tm.%1$tY, %1$tH:%1$tM]"		
+					Text 	item=itemNauticDusk_DateTime_End							label="NauticDusk-End [%1$tA, %1$td.%1$tm.%1$tY, %1$tH:%1$tM]"	
+
+					Text 	item=itemCivilDusk_DateTime_Start							label="CivilDusk-Start [%1$tA, %1$td.%1$tm.%1$tY, %1$tH:%1$tM]"
+					Text 	item=itemCivilDusk_DateTime_End								label="CivilDusk-End [%1$tA, %1$td.%1$tm.%1$tY, %1$tH:%1$tM]"
+
+					Text 	item=itemMorningNight_DateTime_Start						label="MorningNight-Start [%1$tA, %1$td.%1$tm.%1$tY, %1$tH:%1$tM]"
+					Text 	item=itemMorningNight_DateTime_End							label="MorningNight-End [%1$tA, %1$td.%1$tm.%1$tY, %1$tH:%1$tM]"
+					
+					Text 	item=itemEveningNight_DateTime_Start						label="EveningNight-Start [%1$tA, %1$td.%1$tm.%1$tY, %1$tH:%1$tM]"
+					Text 	item=itemEveningNight_DateTime_End							label="EveningNight-Start [%1$tA, %1$td.%1$tm.%1$tY, %1$tH:%1$tM]"
+				}	
+
+				////////////////////////////////////////////////////////////////////////////////
+				/// Open Calibration Settings
+				Text 														icon="settings" 		label="Calibration - Open" 
+				{
+					Setpoint	item=numberBlind_Kitchen_Window_Open					minValue=0	maxValue=100  step=1	icon="settings"		label="Kitchen - Door [%d]"
+					Setpoint	item=numberBlind_LivingRoom_Door_Open					minValue=0	maxValue=100  step=1	icon="settings"		label="Living Room - Door [%d]"
+					Setpoint	item=numberBlind_StudyRoom_Door_Open					minValue=0	maxValue=100  step=1	icon="settings"		label="Study Room - Door [%d]"
+					Setpoint	item=numberBlind_LivingRoom_Window_Open					minValue=0	maxValue=100  step=1	icon="settings"		label="Living Room - Window [%d]"
+					Setpoint	item=numberBlind_StudyRoom_Window_Open					minValue=0	maxValue=100  step=1	icon="settings"		label="Study Room -Window [%d]"
+					Setpoint	item=numberBlind_BedRoom_Window_Open					minValue=0	maxValue=100  step=1	icon="settings"		label="Bedroom - Window [%d]"
+					Setpoint	item=numberBlind_BathRoom_Window_Open					minValue=0	maxValue=100  step=1	icon="settings"		label="Bathroom - Window [%d]"
+				}
+
+				////////////////////////////////////////////////////////////////////////////////
+				/// Close Calibration Settings
+				Text 																	icon="settings" 		label="Calibration - Close" 
+				{
+					Setpoint	item=numberBlind_Kitchen_Window_Close					minValue=0	maxValue=100  step=1	icon="settings"		label="Kitchen - Door [%d]"
+					Setpoint	item=numberBlind_LivingRoom_Door_Close					minValue=0	maxValue=100  step=1	icon="settings"		label="Living Room - Door [%d]"
+					Setpoint	item=numberBlind_StudyRoom_Door_Close					minValue=0	maxValue=100  step=1	icon="settings"		label="Study Room - Door [%d]"
+					Setpoint	item=numberBlind_LivingRoom_Window_Close				minValue=0	maxValue=100  step=1	icon="settings"		label="Living Room - Window [%d]"
+					Setpoint	item=numberBlind_StudyRoom_Window_Close					minValue=0	maxValue=100  step=1	icon="settings"		label="Study Room -Window [%d]"
+					Setpoint	item=numberBlind_BedRoom_Window_Close					minValue=0	maxValue=100  step=1	icon="settings"		label="Bedroom - Window [%d]"
+					Setpoint	item=numberBlind_BathRoom_Window_Close					minValue=0	maxValue=100  step=1	icon="settings"		label="Bathroom - Window [%d]"
+				}
+				
+				////////////////////////////////////////////////////////////////////////////////
+				/// Group Settings - Open
+				Text 																	icon="settings" 		label="Calibration"
+				{
+					Switch 	item=switchBlindCalibration_Room_Kitchen_Window				icon="switch"		label="Kitchen - Door""
+					Switch 	item=switchBlindCalibration_Room_LivingRoom_Door			icon="switch"		label="Living Room - Door"
+					Switch 	item=switchBlindCalibration_Room_LivingRoom_Window			icon="switch"		label="Living Room - Window"
+					Switch 	item=switchBlindCalibration_Room_StudyRoom_Door				icon="switch"		label="Study Room - Door"
+					Switch	item=switchBlindCalibration_Room_StudyRoom_Window			icon="switch"		label="Study Room - Window"
+					Switch	item=switchBlindCalibration_Room_BedRoom_Window				icon="switch"		label="Bedroom - Window"
+					Switch 	item=switchBlindCalibration_Room_BathRoom_Window			icon="switch"		label="Bathroom - Window"
+					Switch 	item=itemBlindCalibration_Event								icon="switch"		label="Calibration on"
+
+				}
+							
+			}
+			
+			Switch 	item=switchBlindManualTriggerOpen									icon="switch"				label="Manual Open"
+			Switch 	item=switchBlindManualTriggerClose									icon="switch"				label="Manual Close"
+			Text 	item=stringBlindStatus												icon="settings"				label="Blind [%s]"
+			Text 	item=stringBlindExecutionTime										icon="clock"				label="Action at: [%s]"
+		}
+
+		////////////////////////////////////////////////////////////////////////////////
+		/// WiFi Automation Control	- Show status		
+		Text	item=switchWiFiTimerAutomationOn										icon="switch"				label="WiFi On - Timer Control"
+		Text	item=switchWiFiTimerAutomationOff										icon="switch"				label="WiFi Off - Timer Control"
+		Text	item=switchWiFiDeviceAutomationOn										icon="switch"				label="WiFi On - Device Control"
+		Text	item=switchWiFiDeviceAutomationOff										icon="switch"				label="WiFi Off - Device Control"
+		
+		////////////////////////////////////////////////////////////////////////////////
+		/// WiFi Automation Control Settings			
+		////////////////////////////////////////////////////////////////////////////////
+		Text  																			icon="settings" 		label="WiFi Control"
+		{
+			Switch	item=switchWiFiTimerAutomationOn									icon="switch"			label="WiFi On - Timer Control"
+			Switch	item=switchWiFiTimerAutomationOff									icon="switch"			label="WiFi Off - Timer Control"
+			Switch	item=switchWiFiDeviceAutomationOn									icon="switch"			label="WiFi On - Device Control"
+			Switch	item=switchWiFiDeviceAutomationOff									icon="switch"			label="WiFi Off - Device Control"
+			Text 	item=switchWifiAutomationTrigger									icon="network"			label="Next action (on/off)"
+			Text 	item=stringWiFiStatus 												icon="settings"			label="WiFi [%s]"											
+			
+			////////////////////////////////////////////////////////////////////////////////
+			/// Timer Settings
+			Text  																		icon="clock"			label="Timer Settings" 
+			{
+				Text	item=stringWifiTimerOnMessage									icon="clock" 			label="Switch On at [%s]"
+				Text	item=stringWifiTimerOffMessage									icon="clock" 			label="Switch Off at [%s]"
+				Text  																	icon="settings" 		label="Timer - Switch On"
+				{
+					Setpoint	item=numberWiFiTimerOnHour								minValue=0  maxValue=23  step=1		icon="clock"		label="Hour [%d]"
+					Setpoint	item=numberWiFiTimerOnMinute							minValue=0	maxValue=55	 step=5		icon="clock"		label="Minute [%d]"
+				}
+				Text 																	icon="settings" 		label="Timer - Switch Off" 
+				{
+					Setpoint	item=numberWiFiTimerOffHour								minValue=0	maxValue=23	 step=1		icon="clock"		label="Hour [%d]"
+					Setpoint	item=numberWiFiTimerOffMinute							minValue=0	maxValue=55	 step=5		icon="clock"		label="Minute [%d]"
+				}
+			}
+		}
+	}	
+}
+
+// vim: syntax=Xtend
